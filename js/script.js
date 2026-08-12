@@ -130,10 +130,13 @@ if (reduceMotion) {
   const revealObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
-        entry.target.classList.toggle("in-view", entry.isIntersecting);
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in-view");
+          revealObserver.unobserve(entry.target);
+        }
       });
     },
-    { threshold: 0.15, rootMargin: "0px 0px -80px 0px" }
+    { threshold: 0.1, rootMargin: "0px 0px -60px 0px" }
   );
   revealEls.forEach((el) => revealObserver.observe(el));
 }

@@ -811,15 +811,13 @@ h1 .word:last-child { color: var(--gold-dim); }
 /* Scroll reveal */
 .reveal {
   opacity: 0;
-  transform: translateY(46px) scale(.94) rotateX(8deg);
-  filter: blur(4px);
-  transition: opacity .7s var(--ease), transform .7s var(--ease), filter .7s var(--ease);
-  will-change: transform, opacity, filter;
+  transform: translateY(28px);
+  transition: opacity .9s var(--ease), transform .9s var(--ease);
+  will-change: transform, opacity;
 }
 .reveal.in-view {
   opacity: 1;
-  transform: translateY(0) scale(1) rotateX(0);
-  filter: blur(0);
+  transform: translateY(0);
 }
 
 /* 3D tilt */
@@ -834,20 +832,31 @@ h1 .word:last-child { color: var(--gold-dim); }
   gap: 24px;
 }
 .card {
-  background:
-    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
-    linear-gradient(160deg, var(--border-soft), var(--border) 60%, var(--gold-light)) border-box;
-  border: 1px solid transparent;
+  position: relative;
+  background: linear-gradient(160deg, var(--surface), var(--surface-2));
+  border: 1px solid var(--border-soft);
   border-radius: var(--radius);
   padding: 32px 28px;
-  transition: box-shadow .3s, transform .25s var(--ease), border-color .2s, background .4s;
+  transition: box-shadow .35s var(--ease), transform .25s var(--ease), border-color .35s var(--ease);
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--grad-warm);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity .4s var(--ease);
+  pointer-events: none;
 }
 .card:hover {
-  background:
-    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
-    var(--grad-warm) border-box;
   box-shadow: 0 20px 45px rgba(90,65,25,.2), 0 0 0 1px rgba(110,79,29,.12);
 }
+.card:hover::before { opacity: 1; }
 .card-icon {
   display: inline-block;
   font-size: 1.8rem;
@@ -873,14 +882,12 @@ h1 .word:last-child { color: var(--gold-dim); }
 .step {
   padding: 24px;
   position: relative;
-  border: 1px solid transparent;
   border-radius: var(--radius);
-  transition: background .35s, box-shadow .3s;
+  background-color: transparent;
+  transition: background-color .4s var(--ease), box-shadow .35s var(--ease);
 }
 .step:hover {
-  background:
-    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
-    linear-gradient(160deg, var(--border-soft), var(--gold-light)) border-box;
+  background-color: var(--surface);
   box-shadow: 0 14px 30px rgba(90,65,25,.14);
 }
 .step-num {
@@ -914,23 +921,34 @@ h1 .word:last-child { color: var(--gold-dim); }
   gap: 22px;
 }
 .value {
-  background:
-    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
-    linear-gradient(160deg, var(--border-soft), var(--border)) border-box;
-  border: 1px solid transparent;
+  position: relative;
+  background: linear-gradient(160deg, var(--surface), var(--surface-2));
+  border: 1px solid var(--border-soft);
   border-radius: var(--radius);
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: background .4s, box-shadow .3s;
+  transition: box-shadow .35s var(--ease), border-color .35s var(--ease);
+}
+.value::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--grad-warm);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity .4s var(--ease);
+  pointer-events: none;
 }
 .value:hover {
-  background:
-    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
-    var(--grad-warm) border-box;
   box-shadow: 0 14px 30px rgba(90,65,25,.16);
 }
+.value:hover::before { opacity: 1; }
 .value strong { font-family: Georgia, "Times New Roman", Times, serif; color: var(--gold-dim); }
 .value span { color: var(--text-dim); font-size: .88rem; }
 

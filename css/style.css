@@ -503,12 +503,15 @@ header, main, footer { position: relative; z-index: 2; }
 .cta:active .cta-orb { transform: translateZ(18px) rotate(-45deg) scale(1.02); }
 
 /* idle pulse so the call to action stays alive on the page */
-.cta-hero .cta-orb { animation: ctaPulse 3.4s ease-in-out infinite; }
+.cta-hero .cta-orb,
+.cta-nav .cta-orb { animation: ctaPulse 3.4s ease-in-out infinite; }
+.cta-nav .cta-orb { animation-delay: -1.7s; }
 @keyframes ctaPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(198,154,44,.32); }
   60%      { box-shadow: 0 0 0 12px rgba(198,154,44,0); }
 }
-.cta-hero:hover .cta-orb { animation: none; }
+.cta-hero:hover .cta-orb,
+.cta-nav:hover .cta-orb { animation: none; }
 .cta-hero { font-size: 1.02rem; }
 
 /* secondary call to action: same language, quieter weight */
@@ -650,7 +653,14 @@ header, main, footer { position: relative; z-index: 2; }
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--border);
+  background: linear-gradient(90deg, transparent, var(--gold) 50%, transparent);
+  background-size: 200% 100%;
+  animation: lineSheen 6s ease-in-out infinite;
+}
+.tagline::after { animation-delay: -3s; }
+@keyframes lineSheen {
+  0%, 100% { background-position: 100% 0; }
+  50%      { background-position: 0% 0; }
 }
 h1 {
   font-family: Georgia, "Times New Roman", Times, serif;
@@ -831,9 +841,10 @@ h1 .word:last-child {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    transition: background-position .8s var(--ease);
+    animation: goldSheen 5.5s ease-in-out infinite;
   }
-  .hero-stats li:hover strong { background-position: 80% 0; }
+  .hero-stats li:nth-child(2) strong { animation-delay: -1.8s; }
+  .hero-stats li:nth-child(3) strong { animation-delay: -3.6s; }
 }
 .hero-stats span { color: var(--text-dim); font-size: .85rem; }
 
@@ -961,14 +972,14 @@ h1 .word:last-child {
   .ht-gold {
     background-image: var(--grad-type);
     background-size: 240% 100%;
-    background-position: 18% 0;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    transition: transform .8s var(--ease), opacity .55s var(--ease), background-position 1s var(--ease);
+    /* the flip-in runs on transitions, so a background-position animation
+       can run alongside it without replacing anything */
+    animation: goldSheen 6s ease-in-out infinite;
   }
-  .ht-in .ht-gold { background-position: 62% 0; }
 }
 .section-title::after {
   content: "";
@@ -979,6 +990,12 @@ h1 .word:last-child {
   height: 3px;
   border-radius: 2px;
   background: var(--grad-warm);
+  background-size: 220% 100%;
+  animation: barSheen 5s ease-in-out infinite;
+}
+@keyframes barSheen {
+  0%, 100% { background-position: 0% 0; }
+  50%      { background-position: 100% 0; }
 }
 .section-title.center { max-width: 700px; margin-left: auto; margin-right: auto; text-align: center; }
 .section-title.center::after { left: 50%; transform: translateX(-50%); }
@@ -1097,6 +1114,7 @@ h1 .word:last-child {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  animation: goldSheen 4.5s ease-in-out infinite;
   opacity: 0;
   pointer-events: none;
   transform: translate3d(30px, -50%, -60px) scale(.9);
@@ -1199,6 +1217,14 @@ h1 .word:last-child {
   opacity: 0;
   transition: opacity .4s;
 }
+.path-step:nth-child(2) .path-dot { animation: dotPulse 3.6s ease-in-out infinite; }
+.path-step:nth-child(3) .path-dot { animation: dotPulse 3.6s ease-in-out .9s infinite; }
+.path-step:nth-child(4) .path-dot { animation: dotPulse 3.6s ease-in-out 1.8s infinite; }
+.path-step:nth-child(5) .path-dot { animation: dotPulse 3.6s ease-in-out 2.7s infinite; }
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(198,154,44,.34); }
+  55%      { box-shadow: 0 0 0 9px rgba(198,154,44,0); }
+}
 .path-step:hover { transform: translateZ(40px); }
 .path-step:hover .path-dot {
   transform: scale(1.35);
@@ -1211,8 +1237,14 @@ h1 .word:last-child {
   font-size: 2.8rem;
   line-height: 1;
   color: var(--gold-dim);
+  background-image: var(--grad-type);
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 1px 0 rgba(255,249,232,.8)) drop-shadow(0 6px 12px rgba(122,95,15,.18));
-  opacity: .5;
+  animation: goldSheen 5s ease-in-out infinite;
+  opacity: .75;
   margin-bottom: 12px;
   transition: opacity .4s, transform .5s var(--ease);
 }

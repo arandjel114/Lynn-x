@@ -126,6 +126,39 @@ if (preloader) {
   runCountUp();
 }
 
+/* ---------- Section headings: split into words for a 3D flip-in ---------- */
+if (!reduceMotion) {
+  document.querySelectorAll(".section-title, .creed-word").forEach((title) => {
+    const words = title.textContent.trim().split(/\s+/);
+    title.textContent = "";
+    title.classList.add("ht-split");
+    words.forEach((w, i) => {
+      const outer = document.createElement("span");
+      outer.className = "ht-word";
+      const inner = document.createElement("span");
+      inner.className = "ht-inner";
+      inner.textContent = w;
+      inner.style.transitionDelay = i * 0.055 + "s";
+      outer.appendChild(inner);
+      title.appendChild(outer);
+      if (i < words.length - 1) title.appendChild(document.createTextNode(" "));
+    });
+  });
+
+  const headingObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("ht-in");
+          headingObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.25 }
+  );
+  document.querySelectorAll(".ht-split").forEach((el) => headingObserver.observe(el));
+}
+
 /* ---------- Scroll reveal ---------- */
 const revealEls = document.querySelectorAll(".reveal");
 if (reduceMotion) {
@@ -415,6 +448,39 @@ if (!reduceMotion) {
   // Re-measure once reveals have settled so cached offsets stay accurate
   setTimeout(measure, 1200);
   setTimeout(measure, 4200);
+
+  /* ---------- CTA: leans in 3D toward the pointer ---------- */
+  document.querySelectorAll(".cta").forEach((cta) => {
+    const state = { tx: 0, ty: 0, x: 0, y: 0, active: false };
+    let raf = null;
+    function loop() {
+      state.x = lerp(state.x, state.tx, 0.16);
+      state.y = lerp(state.y, state.ty, 0.16);
+      cta.style.transform =
+        `perspective(600px) rotateX(${state.y.toFixed(2)}deg) rotateY(${state.x.toFixed(2)}deg)`;
+      if (!state.active && Math.abs(state.x) < 0.02 && Math.abs(state.y) < 0.02) {
+        cta.style.transform = "";
+        raf = null;
+        return;
+      }
+      raf = requestAnimationFrame(loop);
+    }
+    cta.addEventListener("mouseenter", () => {
+      state.active = true;
+      if (!raf) raf = requestAnimationFrame(loop);
+    });
+    cta.addEventListener("mousemove", (e) => {
+      const r = cta.getBoundingClientRect();
+      state.tx = ((e.clientX - r.left) / r.width - 0.5) * 18;
+      state.ty = (0.5 - (e.clientY - r.top) / r.height) * 12;
+    });
+    cta.addEventListener("mouseleave", () => {
+      state.active = false;
+      state.tx = 0;
+      state.ty = 0;
+      if (!raf) raf = requestAnimationFrame(loop);
+    });
+  });
 
   /* ---------- Magnetic buttons ---------- */
   document.querySelectorAll(".magnetic").forEach((el) => {

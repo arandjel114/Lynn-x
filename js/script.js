@@ -37,16 +37,16 @@ if (preloader) {
   if (reduceMotion) {
     dismissPreloader();
   } else {
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       if (preloaderFill) preloaderFill.style.width = "100%";
-    });
-    const minDelay = new Promise((resolve) => setTimeout(resolve, 1600));
+    }, 250);
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 3200));
     const pageLoad = new Promise((resolve) => {
       if (document.readyState === "complete") resolve();
       else window.addEventListener("load", resolve, { once: true });
     });
     Promise.all([minDelay, pageLoad]).then(dismissPreloader);
-    setTimeout(dismissPreloader, 3500);
+    setTimeout(dismissPreloader, 5000);
   }
 } else {
   document.body.classList.remove("is-loading");

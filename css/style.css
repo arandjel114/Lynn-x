@@ -64,9 +64,8 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 .logo span { color: var(--accent); text-transform: uppercase; }
 .logo-img {
-  height: 32px;
+  height: 30px;
   width: auto;
-  border-radius: 50%;
 }
 
 .nav {
@@ -127,10 +126,8 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 .hero-logo img {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   height: auto;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
 }
 .eyebrow {
   color: var(--accent);

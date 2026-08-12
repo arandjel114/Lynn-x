@@ -130,13 +130,10 @@ if (reduceMotion) {
   const revealObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("in-view");
-          revealObserver.unobserve(entry.target);
-        }
+        entry.target.classList.toggle("in-view", entry.isIntersecting);
       });
     },
-    { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    { threshold: 0.15, rootMargin: "0px 0px -80px 0px" }
   );
   revealEls.forEach((el) => revealObserver.observe(el));
 }
@@ -220,17 +217,39 @@ if (!reduceMotion) {
   // Ambient background parallax + hero depth on scroll
   const bgFx = document.querySelector(".bg-fx");
   const heroInner = document.querySelector(".hero-inner");
+
+  // Continuous scroll-linked parallax (runs on scroll up AND down)
+  const parallaxEls = Array.from(document.querySelectorAll(".card-icon, .step-num, .value strong"));
+  let ticking = false;
+  function updateParallax() {
+    const y = window.scrollY;
+    const vh = window.innerHeight;
+
+    if (bgFx) bgFx.style.transform = `translateY(${y * 0.15}px)`;
+    if (heroInner && y < vh) {
+      heroInner.style.transform = `translateY(${y * -0.08}px)`;
+    }
+
+    parallaxEls.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      if (rect.bottom < -100 || rect.top > vh + 100) return;
+      const center = rect.top + rect.height / 2 - vh / 2;
+      el.style.transform = `translateY(${center * -0.06}px)`;
+    });
+
+    ticking = false;
+  }
   window.addEventListener(
     "scroll",
     () => {
-      const y = window.scrollY;
-      if (bgFx) bgFx.style.transform = `translateY(${y * 0.15}px)`;
-      if (heroInner && y < window.innerHeight) {
-        heroInner.style.transform = `translateY(${y * -0.08}px)`;
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(updateParallax);
       }
     },
     { passive: true }
   );
+  updateParallax();
 
   // Magnetic buttons
   document.querySelectorAll(".magnetic").forEach((el) => {

@@ -128,8 +128,15 @@ if (preloader) {
 
 /* ---------- Section headings: split into words for a 3D flip-in ---------- */
 if (!reduceMotion) {
-  document.querySelectorAll(".section-title, .creed-word").forEach((title) => {
+  document.querySelectorAll(".section-title").forEach((title) => {
     const words = title.textContent.trim().split(/\s+/);
+    // data-accent lists the single words that get the metallic gold fill,
+    // the same way only "vorn." is gold in the hero headline.
+    const accents = (title.dataset.accent || "")
+      .split("|")
+      .map((w) => w.trim().toLowerCase())
+      .filter(Boolean);
+
     title.textContent = "";
     title.classList.add("ht-split");
     words.forEach((w, i) => {
@@ -137,6 +144,7 @@ if (!reduceMotion) {
       outer.className = "ht-word";
       const inner = document.createElement("span");
       inner.className = "ht-inner";
+      if (accents.includes(w.toLowerCase())) inner.classList.add("ht-gold");
       inner.textContent = w;
       inner.style.transitionDelay = i * 0.055 + "s";
       outer.appendChild(inner);

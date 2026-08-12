@@ -948,9 +948,9 @@ h1 .word:last-child {
 }
 .ht-in .ht-inner { transform: rotateX(0deg) translateY(0); opacity: 1; }
 
-/* Creed words carry the metallic fill; the flip happens on the inner span,
-   so the gradient has to live there too. */
-.creed-word .ht-inner {
+/* Single accent words inside headings carry the metallic fill.
+   The flip animation lives on .ht-inner, so the gradient has to sit there too. */
+.ht-gold {
   color: var(--gold-dim);
   filter:
     drop-shadow(0 1px 0 rgba(255,249,232,.9))
@@ -958,7 +958,7 @@ h1 .word:last-child {
     drop-shadow(0 8px 16px rgba(122,95,15,.2));
 }
 @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-  .creed-word .ht-inner {
+  .ht-gold {
     background-image: var(--grad-type);
     background-size: 240% 100%;
     background-position: 18% 0;
@@ -966,9 +966,9 @@ h1 .word:last-child {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    transition: transform .8s var(--ease), opacity .55s var(--ease), background-position .9s var(--ease);
+    transition: transform .8s var(--ease), opacity .55s var(--ease), background-position 1s var(--ease);
   }
-  .creed-row:hover .creed-word .ht-inner { background-position: 82% 0; }
+  .ht-in .ht-gold { background-position: 62% 0; }
 }
 .section-title::after {
   content: "";
@@ -1264,7 +1264,7 @@ h1 .word:last-child {
   color: var(--gold-dim);
   transition: transform .5s var(--ease), color .35s;
 }
-.creed-row:hover .creed-word { transform: translateZ(48px); }
+.creed-row:hover .creed-word { transform: translateZ(48px); color: var(--gold); }
 .creed-text {
   margin: 0;
   color: var(--text-dim);

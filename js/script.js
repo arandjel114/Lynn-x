@@ -1,5 +1,9 @@
 document.getElementById("year").textContent = new Date().getFullYear();
 
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const lerp = (a, b, t) => a + (b - a) * t;
+
+/* ---------- Navigation ---------- */
 const navToggle = document.getElementById("navToggle");
 const nav = document.getElementById("nav");
 
@@ -15,6 +19,7 @@ nav.querySelectorAll("a").forEach((link) => {
   });
 });
 
+/* ---------- Contact form ---------- */
 const form = document.getElementById("contactForm");
 const formNote = document.getElementById("formNote");
 
@@ -24,9 +29,7 @@ form.addEventListener("submit", (event) => {
   form.reset();
 });
 
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-// Count-up numbers (hero stats)
+/* ---------- Count-up numbers ---------- */
 function runCountUp() {
   document.querySelectorAll("[data-count-to]").forEach((el) => {
     const to = parseInt(el.getAttribute("data-count-to"), 10);
@@ -48,7 +51,7 @@ function runCountUp() {
   });
 }
 
-// Preloader
+/* ---------- Preloader ---------- */
 const preloader = document.getElementById("preloader");
 const preloaderFill = document.getElementById("preloaderFill");
 const preloaderCount = document.getElementById("preloaderCount");
@@ -76,7 +79,6 @@ if (preloader) {
       if (preloaderFill) preloaderFill.style.width = "100%";
     }, 250);
 
-    // Animated percentage counter synced to the loading bar
     const countDuration = 2600;
     const countStart = performance.now() + 250;
     function tickCount(now) {
@@ -87,27 +89,29 @@ if (preloader) {
     }
     requestAnimationFrame(tickCount);
 
-    // Cursor-reactive spotlight + subtle ring/logo parallax inside the intro
-    if (preloader) {
-      preloader.addEventListener("mousemove", (e) => {
-        if (preloaderSpotlight) {
-          preloaderSpotlight.classList.add("active");
-          preloaderSpotlight.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-        }
-        if (preloaderStage) {
-          const rect = preloaderStage.getBoundingClientRect();
-          const cx = rect.left + rect.width / 2;
-          const cy = rect.top + rect.height / 2;
-          const dx = (e.clientX - cx) / window.innerWidth;
-          const dy = (e.clientY - cy) / window.innerHeight;
-          preloaderStage.style.transform = `translate(${dx * 18}px, ${dy * 18}px)`;
-        }
-      });
+    // Smoothed pointer parallax inside the intro
+    let introTX = 0, introTY = 0, introX = 0, introY = 0, introRAF = null;
+    preloader.addEventListener("mousemove", (e) => {
+      if (preloaderSpotlight) {
+        preloaderSpotlight.classList.add("active");
+        preloaderSpotlight.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+      }
+      introTX = (e.clientX / window.innerWidth - 0.5) * 26;
+      introTY = (e.clientY / window.innerHeight - 0.5) * 26;
+      if (!introRAF) introRAF = requestAnimationFrame(introLoop);
+    });
+    function introLoop() {
+      introX = lerp(introX, introTX, 0.1);
+      introY = lerp(introY, introTY, 0.1);
+      if (preloaderStage) {
+        preloaderStage.style.transform =
+          `perspective(900px) translate3d(${introX}px, ${introY}px, 0) rotateY(${introX * 0.35}deg) rotateX(${-introY * 0.35}deg)`;
+      }
+      if (preloaderDismissed) { introRAF = null; return; }
+      introRAF = requestAnimationFrame(introLoop);
     }
 
-    if (preloaderSkip) {
-      preloaderSkip.addEventListener("click", dismissPreloader);
-    }
+    if (preloaderSkip) preloaderSkip.addEventListener("click", dismissPreloader);
 
     const minDelay = new Promise((resolve) => setTimeout(resolve, 3200));
     const pageLoad = new Promise((resolve) => {
@@ -122,7 +126,7 @@ if (preloader) {
   runCountUp();
 }
 
-// Scroll reveal
+/* ---------- Scroll reveal ---------- */
 const revealEls = document.querySelectorAll(".reveal");
 if (reduceMotion) {
   revealEls.forEach((el) => el.classList.add("in-view"));
@@ -131,8 +135,14 @@ if (reduceMotion) {
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add("in-view");
-          revealObserver.unobserve(entry.target);
+          const el = entry.target;
+          el.classList.add("in-view");
+          revealObserver.unobserve(el);
+          // Hand transform control over to the render loop once the
+          // reveal transition has played out, so scroll-linked 3D stays snappy.
+          if (el.hasAttribute("data-scene3d") || el.hasAttribute("data-depth")) {
+            setTimeout(() => el.classList.add("motion-ready"), 620);
+          }
         }
       });
     },
@@ -141,7 +151,7 @@ if (reduceMotion) {
   revealEls.forEach((el) => revealObserver.observe(el));
 }
 
-// Timeline connector fill
+/* ---------- Timeline connector ---------- */
 const timelineEl = document.querySelector(".timeline");
 if (timelineEl) {
   if (reduceMotion) {
@@ -162,7 +172,7 @@ if (timelineEl) {
   }
 }
 
-// FAQ accordion
+/* ---------- FAQ accordion ---------- */
 document.querySelectorAll(".faq-question").forEach((btn) => {
   btn.addEventListener("click", () => {
     const isOpen = btn.getAttribute("aria-expanded") === "true";
@@ -171,31 +181,7 @@ document.querySelectorAll(".faq-question").forEach((btn) => {
   });
 });
 
-// Header scroll behaviour + scroll progress bar
-const siteHeader = document.getElementById("siteHeader");
-const scrollProgress = document.getElementById("scrollProgress");
-let lastScrollY = window.scrollY;
-
-function onScroll() {
-  const y = window.scrollY;
-  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-  const pct = docHeight > 0 ? (y / docHeight) * 100 : 0;
-  if (scrollProgress) scrollProgress.style.width = pct + "%";
-
-  if (siteHeader) {
-    siteHeader.classList.toggle("is-scrolled", y > 20);
-    if (y > lastScrollY && y > 140) {
-      siteHeader.classList.add("is-hidden");
-    } else {
-      siteHeader.classList.remove("is-hidden");
-    }
-  }
-  lastScrollY = y;
-}
-window.addEventListener("scroll", onScroll, { passive: true });
-onScroll();
-
-// Header logo click ripple
+/* ---------- Header logo click ---------- */
 const headerLogo = document.getElementById("headerLogo");
 if (headerLogo) {
   headerLogo.addEventListener("click", () => {
@@ -206,117 +192,206 @@ if (headerLogo) {
 }
 
 if (!reduceMotion) {
-  // 3D tilt + mouse-tracked spotlight on cards / steps / values / form
-  const tiltEls = document.querySelectorAll(".tilt");
-  tiltEls.forEach((el) => {
+  /* =======================================================================
+     Unified render loop.
+     All scroll/pointer driven motion is interpolated here, once per frame.
+     Layout is read only on resize, never inside the loop, so scrolling
+     never triggers a forced reflow.
+     ======================================================================= */
+
+  const siteHeader = document.getElementById("siteHeader");
+  const scrollProgress = document.getElementById("scrollProgress");
+  const heroInner = document.querySelector(".hero-inner");
+  const heroLogoTilt = document.getElementById("heroLogo");
+  const hero = document.querySelector(".hero");
+  const cursorGlow = document.getElementById("cursorGlow");
+
+  // Elements that drift vertically with the scroll position
+  const depthEls = Array.from(document.querySelectorAll("[data-depth]"));
+  // Elements that rotate in 3D as they pass through the viewport
+  const scene3dEls = Array.from(document.querySelectorAll("[data-scene3d]"));
+
+  let vh = window.innerHeight;
+  let docHeight = document.documentElement.scrollHeight - vh;
+  let layout = [];
+
+  function measure() {
+    vh = window.innerHeight;
+    docHeight = Math.max(1, document.documentElement.scrollHeight - vh);
+    const sy = window.scrollY;
+    layout = [...depthEls, ...scene3dEls].map((el) => {
+      const rect = el.getBoundingClientRect();
+      return { el, top: rect.top + sy, height: rect.height };
+    });
+  }
+
+  // Pointer state (smoothed)
+  let ptrTX = 0, ptrTY = 0, ptrX = 0, ptrY = 0;
+  let glowTX = -400, glowTY = -400, glowX = -400, glowY = -400;
+  // Per-tilt-card state
+  const tiltState = new Map();
+
+  document.querySelectorAll(".tilt").forEach((el) => {
+    tiltState.set(el, { tx: 0, ty: 0, x: 0, y: 0, active: false, mx: 50, my: 50 });
+    el.addEventListener("mouseenter", () => { tiltState.get(el).active = true; });
     el.addEventListener("mousemove", (e) => {
       const rect = el.getBoundingClientRect();
       const px = (e.clientX - rect.left) / rect.width;
       const py = (e.clientY - rect.top) / rect.height;
-      const rx = (0.5 - py) * 14;
-      const ry = (px - 0.5) * 14;
-      el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px) translateZ(10px)`;
-      el.style.setProperty("--mx", px * 100 + "%");
-      el.style.setProperty("--my", py * 100 + "%");
+      const s = tiltState.get(el);
+      s.tx = (px - 0.5) * 16;
+      s.ty = (0.5 - py) * 16;
+      s.mx = px * 100;
+      s.my = py * 100;
     });
     el.addEventListener("mouseleave", () => {
-      el.style.transition = "transform .5s var(--ease)";
-      el.style.transform = "";
-      setTimeout(() => {
-        el.style.transition = "";
-      }, 500);
+      const s = tiltState.get(el);
+      s.active = false;
+      s.tx = 0;
+      s.ty = 0;
     });
   });
 
-  // Hero logo parallax tilt
-  const heroLogo = document.getElementById("heroLogo");
-  const hero = document.querySelector(".hero");
-  if (heroLogo && hero) {
-    hero.addEventListener("mousemove", (e) => {
+  window.addEventListener("mousemove", (e) => {
+    glowTX = e.clientX;
+    glowTY = e.clientY;
+    if (cursorGlow) cursorGlow.classList.add("active");
+    if (hero) {
       const rect = hero.getBoundingClientRect();
-      const px = (e.clientX - rect.left) / rect.width;
-      const py = (e.clientY - rect.top) / rect.height;
-      const rx = (0.5 - py) * 16;
-      const ry = (px - 0.5) * 16;
-      heroLogo.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`;
-    });
-    hero.addEventListener("mouseleave", () => {
-      heroLogo.style.transform = "";
-    });
-    heroLogo.addEventListener("click", () => {
-      heroLogo.style.transition = "transform .6s var(--ease)";
-      heroLogo.style.transform = "perspective(900px) rotateY(360deg)";
-      setTimeout(() => {
-        heroLogo.style.transition = "transform .15s ease-out";
-        heroLogo.style.transform = "";
-      }, 620);
-    });
-  }
+      if (e.clientY < rect.bottom) {
+        ptrTX = (e.clientX / window.innerWidth - 0.5) * 2;
+        ptrTY = ((e.clientY - rect.top) / Math.max(1, rect.height) - 0.5) * 2;
+      }
+    }
+  }, { passive: true });
 
-  // Ambient background parallax + hero depth on scroll
-  const bgFx = document.querySelector(".bg-fx");
-  const heroInner = document.querySelector(".hero-inner");
-  const statementText = document.querySelector(".statement-text");
+  document.addEventListener("mouseleave", () => {
+    if (cursorGlow) cursorGlow.classList.remove("active");
+    ptrTX = 0;
+    ptrTY = 0;
+  });
 
-  // Continuous scroll-linked parallax (runs on scroll up AND down)
-  const parallaxEls = Array.from(document.querySelectorAll(".step-num, .value .card-num"));
-  let ticking = false;
-  function updateParallax() {
-    const y = window.scrollY;
-    const vh = window.innerHeight;
+  let lastScrollY = window.scrollY;
+  let headerHidden = false;
 
-    if (bgFx) bgFx.style.transform = `translateY(${y * 0.15}px)`;
-    if (heroInner && y < vh) {
-      heroInner.style.transform = `translateY(${y * -0.08}px)`;
+  let prevSy = -1;
+  let prevPtrX = 0, prevPtrY = 0;
+
+  function frame() {
+    const sy = window.scrollY;
+    const scrollChanged = sy !== prevSy;
+    prevSy = sy;
+
+    /* --- Header + progress --- */
+    if (scrollChanged && scrollProgress) scrollProgress.style.width = (sy / docHeight) * 100 + "%";
+    if (siteHeader) {
+      siteHeader.classList.toggle("is-scrolled", sy > 20);
+      const goingDown = sy > lastScrollY;
+      if (goingDown && sy > 160 && !headerHidden) {
+        siteHeader.classList.add("is-hidden");
+        headerHidden = true;
+      } else if (!goingDown && headerHidden) {
+        siteHeader.classList.remove("is-hidden");
+        headerHidden = false;
+      }
+    }
+    lastScrollY = sy;
+
+    /* --- Smoothed pointer --- */
+    ptrX = lerp(ptrX, ptrTX, 0.08);
+    ptrY = lerp(ptrY, ptrTY, 0.08);
+    glowX = lerp(glowX, glowTX, 0.14);
+    glowY = lerp(glowY, glowTY, 0.14);
+    if (cursorGlow) cursorGlow.style.transform = `translate3d(${glowX}px, ${glowY}px, 0)`;
+
+    const ptrMoved = Math.abs(ptrX - prevPtrX) > 0.0005 || Math.abs(ptrY - prevPtrY) > 0.0005;
+    prevPtrX = ptrX;
+    prevPtrY = ptrY;
+
+    /* --- Hero: text drifts up, logo tilts toward the pointer --- */
+    if (scrollChanged && heroInner && sy < vh) {
+      heroInner.style.transform = `translate3d(0, ${sy * -0.07}px, 0)`;
+    }
+    if (ptrMoved && heroLogoTilt) {
+      heroLogoTilt.style.transform =
+        `perspective(900px) rotateY(${ptrX * 9}deg) rotateX(${-ptrY * 9}deg) translate3d(${ptrX * 8}px, ${ptrY * 8}px, 0)`;
     }
 
-    parallaxEls.forEach((el) => {
-      const rect = el.getBoundingClientRect();
-      if (rect.bottom < -100 || rect.top > vh + 100) return;
-      const center = rect.top + rect.height / 2 - vh / 2;
-      el.style.transform = `translateY(${center * -0.06}px)`;
-    });
+    /* --- Scroll-linked depth + 3D, using cached layout --- */
+    if (scrollChanged) {
+      for (let i = 0; i < layout.length; i++) {
+        const item = layout[i];
+        const el = item.el;
+        // Don't fight the reveal transition: wait until it has finished.
+        if (el.classList.contains("reveal") && !el.classList.contains("motion-ready")) continue;
+        const center = item.top + item.height / 2 - sy - vh / 2;
+        if (center < -vh * 1.2 || center > vh * 1.2) continue;
 
-    if (statementText) {
-      const rect = statementText.getBoundingClientRect();
-      if (rect.bottom > -200 && rect.top < vh + 200) {
-        const center = rect.top + rect.height / 2 - vh / 2;
-        const progress = Math.max(-1, Math.min(1, center / (vh / 2)));
-        const rx = progress * 10;
-        const scale = 1 - Math.abs(progress) * 0.06;
-        statementText.style.transform = `perspective(1200px) rotateX(${rx}deg) scale(${scale})`;
+        const depth = el.dataset.depth;
+        let value;
+        if (depth) {
+          value = Math.round(center * -parseFloat(depth) * 100) / 100;
+          if (value === item.last) continue;
+          el.style.transform = `translate3d(0, ${value}px, 0)`;
+        } else {
+          const strength = parseFloat(el.dataset.scene3d) || 1;
+          const clamped = Math.max(-1, Math.min(1, center / (vh / 2)));
+          value = Math.round(clamped * 1000) / 1000;
+          if (value === item.last) continue;
+          el.style.transform =
+            `perspective(1400px) rotateX(${(value * 6 * strength).toFixed(3)}deg) scale(${(1 - Math.abs(value) * 0.035 * strength).toFixed(4)})`;
+        }
+        item.last = value;
       }
     }
 
-    ticking = false;
-  }
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(updateParallax);
+    /* --- Card tilt + spotlight --- */
+    tiltState.forEach((s, el) => {
+      if (!s.active && Math.abs(s.x) < 0.01 && Math.abs(s.y) < 0.01) return;
+      s.x = lerp(s.x, s.tx, 0.16);
+      s.y = lerp(s.y, s.ty, 0.16);
+      const lift = s.active ? -6 : 0;
+      el.style.transform =
+        `perspective(900px) rotateY(${s.x}deg) rotateX(${s.y}deg) translate3d(0, ${lift}px, 0)`;
+      el.style.setProperty("--mx", s.mx + "%");
+      el.style.setProperty("--my", s.my + "%");
+      if (!s.active && Math.abs(s.x) < 0.01 && Math.abs(s.y) < 0.01) {
+        s.x = 0; s.y = 0;
+        el.style.transform = "";
       }
-    },
-    { passive: true }
-  );
-  updateParallax();
+    });
 
-  // Magnetic buttons
+    requestAnimationFrame(frame);
+  }
+
+  measure();
+  requestAnimationFrame(frame);
+
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(measure, 150);
+  });
+  window.addEventListener("load", measure);
+  // Re-measure once reveals have settled so cached offsets stay accurate
+  setTimeout(measure, 1200);
+  setTimeout(measure, 4200);
+
+  /* ---------- Magnetic buttons ---------- */
   document.querySelectorAll(".magnetic").forEach((el) => {
     const inner = el.querySelector("span") || el;
     el.addEventListener("mousemove", (e) => {
       const rect = el.getBoundingClientRect();
       const dx = e.clientX - (rect.left + rect.width / 2);
       const dy = e.clientY - (rect.top + rect.height / 2);
-      inner.style.transform = `translate(${dx * 0.25}px, ${dy * 0.35}px)`;
+      inner.style.transform = `translate3d(${dx * 0.25}px, ${dy * 0.35}px, 0)`;
     });
     el.addEventListener("mouseleave", () => {
       inner.style.transform = "";
     });
   });
 
-  // Click ripple feedback on buttons
+  /* ---------- Button click ripple ---------- */
   document.querySelectorAll(".btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const rect = btn.getBoundingClientRect();
@@ -330,18 +405,4 @@ if (!reduceMotion) {
       ripple.addEventListener("animationend", () => ripple.remove());
     });
   });
-
-  // Soft ambient cursor glow (native cursor stays visible)
-  const cursorGlow = document.getElementById("cursorGlow");
-  if (cursorGlow) {
-    let raf = null;
-    window.addEventListener("mousemove", (e) => {
-      cursorGlow.classList.add("active");
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        cursorGlow.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-      });
-    });
-    document.addEventListener("mouseleave", () => cursorGlow.classList.remove("active"));
-  }
 }

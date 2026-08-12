@@ -219,7 +219,7 @@ if (!reduceMotion) {
   const heroInner = document.querySelector(".hero-inner");
 
   // Continuous scroll-linked parallax (runs on scroll up AND down)
-  const parallaxEls = Array.from(document.querySelectorAll(".card-icon, .step-num, .value strong"));
+  const parallaxEls = Array.from(document.querySelectorAll(".step-num, .value strong"));
   let ticking = false;
   function updateParallax() {
     const y = window.scrollY;
@@ -262,6 +262,21 @@ if (!reduceMotion) {
     });
     el.addEventListener("mouseleave", () => {
       inner.style.transform = "";
+    });
+  });
+
+  // Click ripple feedback on buttons
+  document.querySelectorAll(".btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 1.8;
+      const ripple = document.createElement("span");
+      ripple.className = "btn-ripple";
+      ripple.style.width = ripple.style.height = size + "px";
+      ripple.style.left = e.clientX - rect.left - size / 2 + "px";
+      ripple.style.top = e.clientY - rect.top - size / 2 + "px";
+      btn.appendChild(ripple);
+      ripple.addEventListener("animationend", () => ripple.remove());
     });
   });
 

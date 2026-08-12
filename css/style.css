@@ -638,38 +638,92 @@ h1 .word:last-child { color: var(--gold-dim); }
 }
 
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   position: relative;
   overflow: hidden;
-  padding: 14px 30px;
-  border-radius: 2px;
+  padding: 17px 32px;
+  border-radius: 999px;
   font-weight: 600;
-  font-size: .92rem;
-  letter-spacing: .04em;
-  transition: transform .2s var(--ease), background .2s, border-color .2s, color .2s, box-shadow .2s;
+  font-size: .93rem;
+  letter-spacing: .03em;
+  isolation: isolate;
+  transition: transform .35s var(--ease), border-color .3s, color .3s, box-shadow .35s;
   border: 1px solid transparent;
 }
+.btn-arrow {
+  display: inline-flex;
+  transition: transform .35s var(--ease);
+  font-size: 1.05em;
+  line-height: 1;
+}
+.btn:hover .btn-arrow { transform: translateX(5px); }
 .btn::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.5) 50%, transparent 70%);
+  z-index: -1;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%);
   transform: translateX(-120%);
-  transition: transform .6s var(--ease);
+  transition: transform .7s var(--ease);
 }
 .btn:hover::before { transform: translateX(120%); }
 .btn:hover { transform: translateY(-3px); }
-.btn-primary { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--ink); }
-.btn-primary:hover { box-shadow: 0 12px 30px rgba(110,79,29,.35); }
-.btn-ghost { border-color: var(--border); color: var(--text); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--gold-dim); box-shadow: 0 12px 30px rgba(110,79,29,.12); }
-.btn-block { width: 100%; text-align: center; }
+.btn:active { transform: translateY(-1px) scale(.98); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--ink);
+  box-shadow: 0 8px 24px rgba(110,79,29,.22);
+  animation: btnGlow 4s ease-in-out infinite;
+}
+.btn-primary:hover { box-shadow: 0 16px 36px rgba(110,79,29,.4); }
+@keyframes btnGlow {
+  0%, 100% { box-shadow: 0 8px 24px rgba(110,79,29,.22); }
+  50% { box-shadow: 0 8px 30px rgba(169,122,46,.4); }
+}
+.btn-ghost {
+  border-color: var(--border);
+  color: var(--text);
+  background: var(--surface);
+}
+.btn-ghost::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .4s var(--ease);
+}
+.btn-ghost:hover {
+  border-color: transparent;
+  color: var(--ink);
+}
+.btn-ghost:hover::after { transform: scaleX(1); }
+.btn-block { width: 100%; text-align: center; justify-content: center; }
 .magnetic { will-change: transform; }
 .magnetic > span {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   transition: transform .15s ease-out;
 }
 .nav-cta.magnetic { transition: transform .2s var(--ease), box-shadow .2s; }
+
+/* Click ripple feedback */
+.btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.55);
+  transform: scale(0);
+  animation: rippleOut .6s var(--ease);
+  pointer-events: none;
+}
+@keyframes rippleOut {
+  to { transform: scale(1); opacity: 0; }
+}
 
 .hero-stats {
   display: flex;
@@ -755,7 +809,19 @@ h1 .word:last-child { color: var(--gold-dim); }
   padding: 32px 28px;
 }
 .card:hover { border-color: var(--accent); box-shadow: 0 20px 45px rgba(90,65,25,.2), 0 0 0 1px rgba(110,79,29,.12); }
-.card-icon { font-size: 1.8rem; margin-bottom: 16px; filter: drop-shadow(0 0 6px rgba(110,79,29,.2)); }
+.card-icon {
+  display: inline-block;
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 6px rgba(110,79,29,.2));
+  animation: iconBob 3.6s ease-in-out infinite;
+}
+.card:nth-child(2n) .card-icon { animation-delay: -1.2s; }
+.card:nth-child(3n) .card-icon { animation-delay: -2.1s; }
+@keyframes iconBob {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-6px) rotate(-4deg); }
+}
 .card h3 { margin: 0 0 10px; font-size: 1.15rem; font-family: Georgia, "Times New Roman", Times, serif; }
 .card p { color: var(--text-dim); margin: 0; font-size: .95rem; }
 

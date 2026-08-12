@@ -26,6 +26,32 @@ form.addEventListener("submit", (event) => {
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+// Preloader
+const preloader = document.getElementById("preloader");
+const preloaderFill = document.getElementById("preloaderFill");
+function dismissPreloader() {
+  document.body.classList.remove("is-loading");
+  if (preloader) preloader.classList.add("is-done");
+}
+if (preloader) {
+  if (reduceMotion) {
+    dismissPreloader();
+  } else {
+    requestAnimationFrame(() => {
+      if (preloaderFill) preloaderFill.style.width = "100%";
+    });
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 1600));
+    const pageLoad = new Promise((resolve) => {
+      if (document.readyState === "complete") resolve();
+      else window.addEventListener("load", resolve, { once: true });
+    });
+    Promise.all([minDelay, pageLoad]).then(dismissPreloader);
+    setTimeout(dismissPreloader, 3500);
+  }
+} else {
+  document.body.classList.remove("is-loading");
+}
+
 // Scroll reveal
 const revealEls = document.querySelectorAll(".reveal");
 if (reduceMotion) {
@@ -45,6 +71,41 @@ if (reduceMotion) {
   revealEls.forEach((el) => revealObserver.observe(el));
 }
 
+// Header scroll behaviour + scroll progress bar
+const siteHeader = document.getElementById("siteHeader");
+const scrollProgress = document.getElementById("scrollProgress");
+let lastScrollY = window.scrollY;
+
+function onScroll() {
+  const y = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (y / docHeight) * 100 : 0;
+  if (scrollProgress) scrollProgress.style.width = pct + "%";
+
+  if (siteHeader) {
+    siteHeader.classList.toggle("is-scrolled", y > 20);
+    if (y > lastScrollY && y > 140) {
+      siteHeader.classList.add("is-hidden");
+    } else {
+      siteHeader.classList.remove("is-hidden");
+    }
+  }
+  lastScrollY = y;
+}
+window.addEventListener("scroll", onScroll, { passive: true });
+onScroll();
+
+// Header logo click ripple
+const headerLogo = document.getElementById("headerLogo");
+if (headerLogo) {
+  headerLogo.addEventListener("click", () => {
+    headerLogo.classList.remove("is-clicked");
+    // force reflow to restart animation
+    void headerLogo.offsetWidth;
+    headerLogo.classList.add("is-clicked");
+  });
+}
+
 // 3D tilt on cards / steps / values / form
 if (!reduceMotion) {
   const tiltEls = document.querySelectorAll(".tilt");
@@ -62,7 +123,7 @@ if (!reduceMotion) {
     });
   });
 
-  // Hero logo parallax
+  // Hero logo parallax tilt (nested inside the idle-float wrapper)
   const heroLogo = document.getElementById("heroLogo");
   const hero = document.querySelector(".hero");
   if (heroLogo && hero) {
@@ -72,10 +133,18 @@ if (!reduceMotion) {
       const py = (e.clientY - rect.top) / rect.height;
       const rx = (0.5 - py) * 16;
       const ry = (px - 0.5) * 16;
-      heroLogo.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+      heroLogo.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`;
     });
     hero.addEventListener("mouseleave", () => {
       heroLogo.style.transform = "";
+    });
+    heroLogo.addEventListener("click", () => {
+      heroLogo.style.transition = "transform .6s var(--ease)";
+      heroLogo.style.transform = "perspective(900px) rotateY(360deg)";
+      setTimeout(() => {
+        heroLogo.style.transition = "transform .15s ease-out";
+        heroLogo.style.transform = "";
+      }, 620);
     });
   }
 
@@ -91,5 +160,18 @@ if (!reduceMotion) {
       });
     });
     document.addEventListener("mouseleave", () => cursorGlow.classList.remove("active"));
+  }
+
+  // Ambient background parallax on scroll
+  const bgFx = document.querySelector(".bg-fx");
+  if (bgFx) {
+    window.addEventListener(
+      "scroll",
+      () => {
+        const y = window.scrollY;
+        bgFx.style.transform = `translateY(${y * 0.15}px)`;
+      },
+      { passive: true }
+    );
   }
 }

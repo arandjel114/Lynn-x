@@ -8,7 +8,17 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="is-loading">
+
+<div class="preloader" id="preloader" aria-hidden="true">
+  <div class="preloader-logo">
+    <img src="assets/logo-icon-sm.png" alt="">
+  </div>
+  <div class="preloader-word">lynQ<span>x</span></div>
+  <div class="preloader-bar"><span id="preloaderFill"></span></div>
+</div>
+
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 
 <div class="bg-fx" aria-hidden="true">
   <div class="bg-glow bg-glow-1"></div>
@@ -17,9 +27,12 @@
 </div>
 <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
-<header class="site-header">
+<header class="site-header" id="siteHeader">
   <div class="container header-inner">
-    <a href="#top" class="logo"><img src="assets/logo-icon-sm.png" alt="Lynq-x" class="logo-img">lynQ<span>x</span></a>
+    <a href="#top" class="logo" id="headerLogo">
+      <span class="logo-img-wrap"><img src="assets/logo-icon-sm.png" alt="Lynq-x" class="logo-img"></span>
+      lynQ<span>x</span>
+    </a>
     <nav class="nav" id="nav">
       <a href="#leistungen">Leistungen</a>
       <a href="#ablauf">Ablauf</a>
@@ -51,8 +64,13 @@
           <li><strong>1:1</strong><span>persönliche Betreuung</span></li>
         </ul>
       </div>
-      <div class="hero-logo" id="heroLogo">
-        <img src="assets/logo-hero-2.png" alt="Lynq-x — Built to scale. Designed to win.">
+      <div class="hero-logo">
+        <div class="hero-logo-float">
+          <div class="hero-logo-tilt" id="heroLogo">
+            <img src="assets/logo-hero-2.png" alt="Lynq-x — Built to scale. Designed to win.">
+            <div class="hero-logo-shine"></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>

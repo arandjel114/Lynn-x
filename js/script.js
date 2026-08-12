@@ -206,16 +206,18 @@ if (headerLogo) {
 }
 
 if (!reduceMotion) {
-  // 3D tilt on cards / steps / values / form
+  // 3D tilt + mouse-tracked spotlight on cards / steps / values / form
   const tiltEls = document.querySelectorAll(".tilt");
   tiltEls.forEach((el) => {
     el.addEventListener("mousemove", (e) => {
       const rect = el.getBoundingClientRect();
       const px = (e.clientX - rect.left) / rect.width;
       const py = (e.clientY - rect.top) / rect.height;
-      const rx = (0.5 - py) * 10;
-      const ry = (px - 0.5) * 10;
-      el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-4px)`;
+      const rx = (0.5 - py) * 14;
+      const ry = (px - 0.5) * 14;
+      el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px) translateZ(10px)`;
+      el.style.setProperty("--mx", px * 100 + "%");
+      el.style.setProperty("--my", py * 100 + "%");
     });
     el.addEventListener("mouseleave", () => {
       el.style.transform = "";
@@ -250,9 +252,10 @@ if (!reduceMotion) {
   // Ambient background parallax + hero depth on scroll
   const bgFx = document.querySelector(".bg-fx");
   const heroInner = document.querySelector(".hero-inner");
+  const statementText = document.querySelector(".statement-text");
 
   // Continuous scroll-linked parallax (runs on scroll up AND down)
-  const parallaxEls = Array.from(document.querySelectorAll(".step-num, .value strong"));
+  const parallaxEls = Array.from(document.querySelectorAll(".step-num, .value .card-num"));
   let ticking = false;
   function updateParallax() {
     const y = window.scrollY;
@@ -269,6 +272,17 @@ if (!reduceMotion) {
       const center = rect.top + rect.height / 2 - vh / 2;
       el.style.transform = `translateY(${center * -0.06}px)`;
     });
+
+    if (statementText) {
+      const rect = statementText.getBoundingClientRect();
+      if (rect.bottom > -200 && rect.top < vh + 200) {
+        const center = rect.top + rect.height / 2 - vh / 2;
+        const progress = Math.max(-1, Math.min(1, center / (vh / 2)));
+        const rx = progress * 10;
+        const scale = 1 - Math.abs(progress) * 0.06;
+        statementText.style.transform = `perspective(1200px) rotateX(${rx}deg) scale(${scale})`;
+      }
+    }
 
     ticking = false;
   }

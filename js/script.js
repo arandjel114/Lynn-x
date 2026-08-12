@@ -141,6 +141,36 @@ if (reduceMotion) {
   revealEls.forEach((el) => revealObserver.observe(el));
 }
 
+// Timeline connector fill
+const timelineEl = document.querySelector(".timeline");
+if (timelineEl) {
+  if (reduceMotion) {
+    timelineEl.classList.add("in-view");
+  } else {
+    const timelineObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            timelineEl.classList.add("in-view");
+            timelineObserver.unobserve(timelineEl);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+    timelineObserver.observe(timelineEl);
+  }
+}
+
+// FAQ accordion
+document.querySelectorAll(".faq-question").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const isOpen = btn.getAttribute("aria-expanded") === "true";
+    document.querySelectorAll(".faq-question").forEach((b) => b.setAttribute("aria-expanded", "false"));
+    btn.setAttribute("aria-expanded", String(!isOpen));
+  });
+});
+
 // Header scroll behaviour + scroll progress bar
 const siteHeader = document.getElementById("siteHeader");
 const scrollProgress = document.getElementById("scrollProgress");

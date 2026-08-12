@@ -23,6 +23,13 @@
   --shadow: 0 20px 50px rgba(150,113,49,.2);
   --ease: cubic-bezier(.16,.8,.3,1);
   --grad-gold: linear-gradient(135deg, var(--gold-dim), var(--gold) 50%, var(--gold-light));
+  /* Metallic sweep for display type. The bright stop is deliberately a narrow
+     glint: a wide light band would wash out against the cream ground and make
+     the ends of words unreadable. */
+  --grad-type: linear-gradient(100deg,
+      #6d5410 0%, #7f620f 16%, #9e7d15 34%,
+      #c99a30 47%, #e0bd6a 50%, #c99a30 53%,
+      #9e7d15 68%, #7f620f 86%, #6d5410 100%);
   --grad-warm: linear-gradient(135deg, var(--copper), var(--gold), var(--rose));
   --grad-mesh:
     radial-gradient(circle at 12% 8%, rgba(232,199,133,.4), transparent 42%),
@@ -653,7 +660,27 @@ h1 {
   letter-spacing: -0.01em;
   color: var(--text);
 }
-h1 .word:last-child { color: var(--gold-dim); }
+h1 .word:last-child {
+  color: var(--gold-dim);
+  filter:
+    drop-shadow(0 1px 0 rgba(255,249,232,.9))
+    drop-shadow(0 2px 0 rgba(122,95,15,.3))
+    drop-shadow(0 10px 20px rgba(122,95,15,.25));
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  h1 .word:last-child {
+    background-image: var(--grad-type);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    /* keep the word's own reveal animation, otherwise it never leaves opacity:0
+       and the gradient text renders as nothing at all */
+    animation: wordUp .8s var(--ease) .76s forwards,
+               goldSheen 7s ease-in-out 1.6s infinite;
+  }
+}
 .split-words { overflow: hidden; }
 .split-words .word {
   display: inline-block;
@@ -790,12 +817,24 @@ h1 .word:last-child { color: var(--gold-dim); }
 }
 .hero-stats li:hover { transform: translate3d(0,-4px,22px) rotateX(-10deg); }
 .hero-stats strong {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-family: Georgia, "Times New Roman", Times, serif;
   color: var(--gold-dim);
-  transition: color .3s;
+  filter: drop-shadow(0 1px 0 rgba(255,249,232,.85)) drop-shadow(0 5px 10px rgba(122,95,15,.2));
 }
-.hero-stats li:hover strong { color: var(--gold); }
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero-stats strong {
+    background-image: var(--grad-type);
+    background-size: 220% 100%;
+    background-position: 20% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    transition: background-position .8s var(--ease);
+  }
+  .hero-stats li:hover strong { background-position: 80% 0; }
+}
 .hero-stats span { color: var(--text-dim); font-size: .85rem; }
 
 .logos {
@@ -861,6 +900,37 @@ h1 .word:last-child { color: var(--gold-dim); }
   padding-bottom: 20px;
 }
 
+/* ============ Metallic gradient display type ============
+   Always ships a solid colour first; the gradient only replaces it where
+   background-clip:text is actually supported, so the text can never render
+   invisible if the clip fails. */
+.gold-type {
+  color: var(--gold-dim);
+  /* fake extrusion + cast shadow, works on clipped text too */
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 249, 232, .85))
+    drop-shadow(0 2px 0 rgba(122, 95, 15, .28))
+    drop-shadow(0 8px 16px rgba(122, 95, 15, .22));
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .gold-type {
+    background-image: var(--grad-type);
+    background-size: 220% 100%;
+    background-position: 15% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    transition: background-position 1.1s var(--ease);
+  }
+  /* the sheen travels across the letters on hover / when revealed */
+  .gold-type-sheen { animation: goldSheen 7s ease-in-out infinite; }
+  @keyframes goldSheen {
+    0%, 100% { background-position: 12% 0; }
+    50%      { background-position: 88% 0; }
+  }
+}
+
 /* Word-by-word 3D flip-in for headings */
 .ht-split { perspective: 800px; }
 .ht-word {
@@ -877,6 +947,29 @@ h1 .word:last-child { color: var(--gold-dim); }
   transition: transform .8s var(--ease), opacity .55s var(--ease);
 }
 .ht-in .ht-inner { transform: rotateX(0deg) translateY(0); opacity: 1; }
+
+/* Creed words carry the metallic fill; the flip happens on the inner span,
+   so the gradient has to live there too. */
+.creed-word .ht-inner {
+  color: var(--gold-dim);
+  filter:
+    drop-shadow(0 1px 0 rgba(255,249,232,.9))
+    drop-shadow(0 2px 0 rgba(122,95,15,.26))
+    drop-shadow(0 8px 16px rgba(122,95,15,.2));
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .creed-word .ht-inner {
+    background-image: var(--grad-type);
+    background-size: 240% 100%;
+    background-position: 18% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    transition: transform .8s var(--ease), opacity .55s var(--ease), background-position .9s var(--ease);
+  }
+  .creed-row:hover .creed-word .ht-inner { background-position: 82% 0; }
+}
 .section-title::after {
   content: "";
   position: absolute;
@@ -999,6 +1092,11 @@ h1 .word:last-child { color: var(--gold-dim); }
   font-weight: 700;
   line-height: 1;
   color: var(--gold);
+  background-image: var(--grad-type);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   opacity: 0;
   pointer-events: none;
   transform: translate3d(30px, -50%, -60px) scale(.9);
@@ -1110,10 +1208,11 @@ h1 .word:last-child { color: var(--gold-dim); }
 .path-num {
   display: block;
   font-family: Georgia, "Times New Roman", Times, serif;
-  font-size: 2.6rem;
+  font-size: 2.8rem;
   line-height: 1;
-  color: var(--gold);
-  opacity: .28;
+  color: var(--gold-dim);
+  filter: drop-shadow(0 1px 0 rgba(255,249,232,.8)) drop-shadow(0 6px 12px rgba(122,95,15,.18));
+  opacity: .5;
   margin-bottom: 12px;
   transition: opacity .4s, transform .5s var(--ease);
 }
@@ -1165,7 +1264,7 @@ h1 .word:last-child { color: var(--gold-dim); }
   color: var(--gold-dim);
   transition: transform .5s var(--ease), color .35s;
 }
-.creed-row:hover .creed-word { transform: translateZ(48px); color: var(--gold); }
+.creed-row:hover .creed-word { transform: translateZ(48px); }
 .creed-text {
   margin: 0;
   color: var(--text-dim);
@@ -1186,7 +1285,24 @@ h1 .word:last-child { color: var(--gold-dim); }
   letter-spacing: -0.01em;
   color: var(--text-dim);
 }
-.statement-text .word.accent { color: var(--gold); }
+.statement-text .word.accent {
+  color: var(--gold-dim);
+  filter:
+    drop-shadow(0 1px 0 rgba(255,249,232,.9))
+    drop-shadow(0 2px 0 rgba(122,95,15,.28))
+    drop-shadow(0 10px 22px rgba(122,95,15,.22));
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .statement-text .word.accent {
+    background-image: var(--grad-type);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: goldSheen 8s ease-in-out infinite;
+  }
+}
 
 /* Kontakt */
 .kontakt-inner {

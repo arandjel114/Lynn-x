@@ -151,24 +151,24 @@ if (reduceMotion) {
   revealEls.forEach((el) => revealObserver.observe(el));
 }
 
-/* ---------- Timeline connector ---------- */
-const timelineEl = document.querySelector(".timeline");
-if (timelineEl) {
+/* ---------- Process path connector ---------- */
+const pathEl = document.querySelector(".path");
+if (pathEl) {
   if (reduceMotion) {
-    timelineEl.classList.add("in-view");
+    pathEl.classList.add("in-view");
   } else {
-    const timelineObserver = new IntersectionObserver(
+    const pathObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            timelineEl.classList.add("in-view");
-            timelineObserver.unobserve(timelineEl);
+            pathEl.classList.add("in-view");
+            pathObserver.unobserve(pathEl);
           }
         });
       },
       { threshold: 0.3 }
     );
-    timelineObserver.observe(timelineEl);
+    pathObserver.observe(pathEl);
   }
 }
 
@@ -246,6 +246,31 @@ if (!reduceMotion) {
     });
     el.addEventListener("mouseleave", () => {
       const s = tiltState.get(el);
+      s.active = false;
+      s.tx = 0;
+      s.ty = 0;
+    });
+  });
+
+  /* Editorial rows: the row stays put and stays hoverable; only the inner
+     layer leans in 3D toward the cursor, so hit-testing never flickers. */
+  const rowState = new Map();
+  document.querySelectorAll("[data-svc], .creed-row").forEach((row) => {
+    const inner = row.querySelector(".svc-inner, .creed-inner");
+    if (!inner) return;
+    rowState.set(inner, { tx: 0, ty: 0, x: 0, y: 0, active: false });
+    row.addEventListener("mouseenter", () => { rowState.get(inner).active = true; });
+    row.addEventListener("mousemove", (e) => {
+      const rect = row.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width;
+      const py = (e.clientY - rect.top) / rect.height;
+      const s = rowState.get(inner);
+      s.tx = (px - 0.5) * 9;
+      s.ty = (0.5 - py) * 6;
+      row.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
+    });
+    row.addEventListener("mouseleave", () => {
+      const s = rowState.get(inner);
       s.active = false;
       s.tx = 0;
       s.ty = 0;
@@ -345,7 +370,7 @@ if (!reduceMotion) {
       }
     }
 
-    /* --- Card tilt + spotlight --- */
+    /* --- Remaining tilt surfaces (contact form) --- */
     tiltState.forEach((s, el) => {
       if (!s.active && Math.abs(s.x) < 0.01 && Math.abs(s.y) < 0.01) return;
       s.x = lerp(s.x, s.tx, 0.16);
@@ -359,6 +384,20 @@ if (!reduceMotion) {
         s.x = 0; s.y = 0;
         el.style.transform = "";
       }
+    });
+
+    /* --- Editorial rows lean into 3D under the cursor --- */
+    rowState.forEach((s, el) => {
+      if (!s.active && Math.abs(s.x) < 0.01 && Math.abs(s.y) < 0.01) return;
+      s.x = lerp(s.x, s.tx, 0.14);
+      s.y = lerp(s.y, s.ty, 0.14);
+      if (!s.active && Math.abs(s.x) < 0.01 && Math.abs(s.y) < 0.01) {
+        s.x = 0; s.y = 0;
+        el.style.transform = "";
+        return;
+      }
+      el.style.transform =
+        `rotateY(${s.x.toFixed(3)}deg) rotateX(${s.y.toFixed(3)}deg)`;
     });
 
     requestAnimationFrame(frame);

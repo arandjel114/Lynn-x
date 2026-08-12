@@ -160,10 +160,7 @@ body.is-loading { overflow: hidden; height: 100vh; }
 .pw-letter:nth-child(5) { animation-delay: 1.27s; }
 .pw-accent {
   text-transform: uppercase;
-  background: linear-gradient(120deg, var(--gold-dim), var(--gold));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--gold);
 }
 @keyframes pwLetterIn {
   0% { opacity: 0; transform: translateY(28px) rotateX(60deg); }
@@ -396,10 +393,7 @@ header, main, footer { position: relative; z-index: 2; }
   cursor: pointer;
 }
 .logo span {
-  background: linear-gradient(120deg, var(--gold-dim), var(--gold));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--gold);
   text-transform: uppercase;
 }
 .logo-img-wrap {
@@ -609,11 +603,9 @@ h1 {
   line-height: 1.15;
   margin: 0 0 18px;
   letter-spacing: -0.01em;
-  background: linear-gradient(120deg, var(--text) 35%, var(--gold) 70%, var(--gold-dim) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--text);
 }
+h1 .word:last-child { color: var(--gold-dim); }
 .split-words { overflow: hidden; }
 .split-words .word {
   display: inline-block;

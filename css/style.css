@@ -811,14 +811,29 @@ h1 .word:last-child { color: var(--gold-dim); }
 /* Scroll reveal */
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity .9s var(--ease), transform .9s var(--ease);
+  transform: translateY(42px) scale(.96);
+  transition: opacity .8s var(--ease), transform .8s var(--ease);
   will-change: transform, opacity;
 }
 .reveal.in-view {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
+
+/* Staggered cascade for grid groups */
+.cards .card.reveal:nth-child(1) { transition-delay: 0s; }
+.cards .card.reveal:nth-child(2) { transition-delay: .08s; }
+.cards .card.reveal:nth-child(3) { transition-delay: .16s; }
+.cards .card.reveal:nth-child(4) { transition-delay: .24s; }
+.cards .card.reveal:nth-child(5) { transition-delay: .32s; }
+.cards .card.reveal:nth-child(6) { transition-delay: .4s; }
+.steps .step.reveal:nth-child(1) { transition-delay: 0s; }
+.steps .step.reveal:nth-child(2) { transition-delay: .1s; }
+.steps .step.reveal:nth-child(3) { transition-delay: .2s; }
+.steps .step.reveal:nth-child(4) { transition-delay: .3s; }
+.about-values .value.reveal:nth-child(1) { transition-delay: 0s; }
+.about-values .value.reveal:nth-child(2) { transition-delay: .12s; }
+.about-values .value.reveal:nth-child(3) { transition-delay: .24s; }
 
 /* 3D tilt */
 .tilt {

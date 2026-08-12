@@ -1,10 +1,11 @@
 :root {
-  --bg: #f4ead4;
-  --bg-alt: #efe1c2;
-  --surface: #faf3e4;
-  --surface-2: #f4e8cd;
-  --border: #e2c98f;
-  --border-soft: #ecdcb3;
+  --bg: #f0e3c8;
+  --bg-alt: #e9d8b2;
+  --surface: #fdf8ee;
+  --surface-2: #f7ecd4;
+  --border: #d3ac66;
+  --border-soft: #e0c48c;
+  --card-shadow: 0 8px 24px rgba(120,90,40,.14);
   --text: #33270f;
   --text-dim: #8c7a54;
   --gold-light: #e8c785;
@@ -774,8 +775,8 @@ h1 .word:last-child { color: var(--gold-dim); }
 /* Scroll reveal */
 .reveal {
   opacity: 0;
-  transform: translateY(42px) scale(.96);
-  transition: opacity .8s var(--ease), transform .8s var(--ease);
+  transform: translateY(32px) scale(.97);
+  transition: opacity .55s var(--ease), transform .55s var(--ease);
   will-change: transform, opacity;
 }
 .reveal.in-view {
@@ -804,7 +805,7 @@ h1 .word:last-child { color: var(--gold-dim); }
   --my: 50%;
   position: relative;
   transform-style: preserve-3d;
-  transition: transform .25s var(--ease), border-color .2s, box-shadow .25s;
+  transition: transform .08s linear, border-color .2s, box-shadow .25s;
 }
 .tilt::after {
   content: "";
@@ -828,10 +829,11 @@ h1 .word:last-child { color: var(--gold-dim); }
 .card {
   position: relative;
   background: linear-gradient(160deg, var(--surface), var(--surface-2));
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 32px 28px;
-  transition: box-shadow .35s var(--ease), transform .25s var(--ease), border-color .35s var(--ease);
+  box-shadow: var(--card-shadow);
+  transition: box-shadow .35s var(--ease), border-color .35s var(--ease);
 }
 .card::before {
   content: "";
@@ -935,10 +937,11 @@ h1 .word:last-child { color: var(--gold-dim); }
 .value {
   position: relative;
   background: linear-gradient(160deg, var(--surface), var(--surface-2));
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 32px 28px;
-  transition: box-shadow .35s var(--ease), transform .25s var(--ease);
+  box-shadow: var(--card-shadow);
+  transition: box-shadow .35s var(--ease);
 }
 .value::before {
   content: "";
@@ -1058,7 +1061,8 @@ h1 .word:last-child { color: var(--gold-dim); }
 .compare-col {
   border-radius: var(--radius);
   padding: 32px;
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
 }
 .compare-bad { background: var(--surface); opacity: .85; }
 .compare-good {
@@ -1122,10 +1126,11 @@ h1 .word:last-child { color: var(--gold-dim); }
   gap: 12px;
 }
 .faq-item {
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   overflow: hidden;
+  box-shadow: var(--card-shadow);
   transition: border-color .3s;
 }
 .faq-item:has(.faq-question[aria-expanded="true"]) { border-color: var(--gold-light); }

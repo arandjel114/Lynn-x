@@ -220,7 +220,11 @@ if (!reduceMotion) {
       el.style.setProperty("--my", py * 100 + "%");
     });
     el.addEventListener("mouseleave", () => {
+      el.style.transition = "transform .5s var(--ease)";
       el.style.transform = "";
+      setTimeout(() => {
+        el.style.transition = "";
+      }, 500);
     });
   });
 

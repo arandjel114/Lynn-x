@@ -10,13 +10,21 @@
   --gold-light: #cfa458;
   --gold: #a97a2e;
   --gold-dim: #6e4f1d;
+  --copper: #b5693f;
+  --rose: #c17a5c;
   --ink: #1c140b;
   --accent: var(--gold);
   --accent-2: var(--gold-dim);
-  --radius: 6px;
+  --radius: 10px;
   --max-width: 1140px;
   --shadow: 0 20px 50px rgba(90,65,25,.25);
   --ease: cubic-bezier(.16,.8,.3,1);
+  --grad-gold: linear-gradient(135deg, var(--gold-dim), var(--gold) 50%, var(--gold-light));
+  --grad-warm: linear-gradient(135deg, var(--copper), var(--gold), var(--rose));
+  --grad-mesh:
+    radial-gradient(circle at 12% 8%, rgba(197,140,70,.35), transparent 42%),
+    radial-gradient(circle at 88% 18%, rgba(193,122,92,.28), transparent 45%),
+    radial-gradient(circle at 50% 92%, rgba(212,168,86,.22), transparent 50%);
 }
 
 * { box-sizing: border-box; }
@@ -24,7 +32,8 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg);
+  background: var(--grad-mesh), var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
@@ -279,15 +288,6 @@ ul { list-style: none; margin: 0; padding: 0; }
   animation-duration: 28s;
   animation-delay: -6s;
   background: radial-gradient(circle, rgba(169,122,46,.18), transparent 70%);
-}
-.bg-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(110,79,29,.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(110,79,29,.06) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(circle at 50% 0%, black, transparent 75%);
 }
 @keyframes drift {
   0%   { transform: translate(0,0) scale(1); }
@@ -766,16 +766,47 @@ h1 .word:last-child { color: var(--gold-dim); }
 .marquee:hover .marquee-track { animation-play-state: paused; }
 
 /* Sections */
-.section { padding: 96px 0; perspective: 1400px; }
-.section-alt { background: var(--bg-alt); }
+.section { padding: 96px 0; perspective: 1400px; position: relative; }
+.section-alt {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(212,168,86,.16), transparent 55%),
+    radial-gradient(circle at 90% 100%, rgba(193,122,92,.14), transparent 55%),
+    linear-gradient(180deg, var(--bg-alt), var(--surface-2) 60%, var(--bg-alt));
+  position: relative;
+}
+.section::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(70%, 480px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--rose) 50%, var(--gold) 80%, transparent);
+  opacity: .5;
+}
+.section:last-of-type::after { display: none; }
 .section-title {
   font-family: Georgia, "Times New Roman", Times, serif;
   font-size: clamp(1.7rem, 3.4vw, 2.3rem);
   margin: 0 0 50px;
   letter-spacing: -0.01em;
   max-width: 620px;
+  position: relative;
+  padding-bottom: 20px;
+}
+.section-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 56px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--grad-warm);
 }
 .section-title.center { max-width: 700px; margin-left: auto; margin-right: auto; text-align: center; }
+.section-title.center::after { left: 50%; transform: translateX(-50%); }
 
 /* Scroll reveal */
 .reveal {
@@ -803,12 +834,20 @@ h1 .word:last-child { color: var(--gold-dim); }
   gap: 24px;
 }
 .card {
-  background: linear-gradient(160deg, var(--surface), var(--surface-2));
-  border: 1px solid var(--border);
+  background:
+    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
+    linear-gradient(160deg, var(--border-soft), var(--border) 60%, var(--gold-light)) border-box;
+  border: 1px solid transparent;
   border-radius: var(--radius);
   padding: 32px 28px;
+  transition: box-shadow .3s, transform .25s var(--ease), border-color .2s, background .4s;
 }
-.card:hover { border-color: var(--accent); box-shadow: 0 20px 45px rgba(90,65,25,.2), 0 0 0 1px rgba(110,79,29,.12); }
+.card:hover {
+  background:
+    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
+    var(--grad-warm) border-box;
+  box-shadow: 0 20px 45px rgba(90,65,25,.2), 0 0 0 1px rgba(110,79,29,.12);
+}
 .card-icon {
   display: inline-block;
   font-size: 1.8rem;
@@ -836,8 +875,14 @@ h1 .word:last-child { color: var(--gold-dim); }
   position: relative;
   border: 1px solid transparent;
   border-radius: var(--radius);
+  transition: background .35s, box-shadow .3s;
 }
-.step:hover { border-color: var(--border); background: var(--surface); }
+.step:hover {
+  background:
+    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
+    linear-gradient(160deg, var(--border-soft), var(--gold-light)) border-box;
+  box-shadow: 0 14px 30px rgba(90,65,25,.14);
+}
 .step-num {
   width: 40px;
   height: 40px;
@@ -869,15 +914,23 @@ h1 .word:last-child { color: var(--gold-dim); }
   gap: 22px;
 }
 .value {
-  background: linear-gradient(160deg, var(--surface), var(--surface-2));
-  border: 1px solid var(--border);
+  background:
+    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
+    linear-gradient(160deg, var(--border-soft), var(--border)) border-box;
+  border: 1px solid transparent;
   border-radius: var(--radius);
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: background .4s, box-shadow .3s;
 }
-.value:hover { border-color: var(--accent); }
+.value:hover {
+  background:
+    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
+    var(--grad-warm) border-box;
+  box-shadow: 0 14px 30px rgba(90,65,25,.16);
+}
 .value strong { font-family: Georgia, "Times New Roman", Times, serif; color: var(--gold-dim); }
 .value span { color: var(--text-dim); font-size: .88rem; }
 
@@ -893,8 +946,10 @@ h1 .word:last-child { color: var(--gold-dim); }
 .kontakt-info a:hover { color: var(--gold); }
 
 .kontakt-form {
-  background: linear-gradient(160deg, var(--surface), var(--surface-2));
-  border: 1px solid var(--border);
+  background:
+    linear-gradient(160deg, var(--surface), var(--surface-2)) padding-box,
+    linear-gradient(160deg, var(--gold-light), var(--border) 45%, var(--rose)) border-box;
+  border: 1px solid transparent;
   border-radius: var(--radius);
   padding: 32px;
   display: flex;

@@ -313,46 +313,17 @@ if (!reduceMotion) {
     });
   });
 
-  // Custom cursor (dot + trailing ring)
-  const cursorDot = document.getElementById("cursorDot");
-  const cursorRing = document.getElementById("cursorRing");
+  // Soft ambient cursor glow (native cursor stays visible)
   const cursorGlow = document.getElementById("cursorGlow");
-  if (cursorDot && cursorRing) {
-    document.documentElement.classList.add("custom-cursor");
-    let ringX = window.innerWidth / 2;
-    let ringY = window.innerHeight / 2;
-    let targetX = ringX;
-    let targetY = ringY;
-
+  if (cursorGlow) {
+    let raf = null;
     window.addEventListener("mousemove", (e) => {
-      targetX = e.clientX;
-      targetY = e.clientY;
-      cursorDot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-      cursorDot.classList.add("active");
-      cursorRing.classList.add("active");
-      if (cursorGlow) {
-        cursorGlow.classList.add("active");
+      cursorGlow.classList.add("active");
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
         cursorGlow.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-      }
+      });
     });
-    document.addEventListener("mouseleave", () => {
-      cursorDot.classList.remove("active");
-      cursorRing.classList.remove("active");
-      if (cursorGlow) cursorGlow.classList.remove("active");
-    });
-
-    function animateRing() {
-      ringX += (targetX - ringX) * 0.18;
-      ringY += (targetY - ringY) * 0.18;
-      cursorRing.style.transform = `translate(${ringX}px, ${ringY}px)`;
-      requestAnimationFrame(animateRing);
-    }
-    animateRing();
-
-    const hoverTargets = "a, button, .tilt, input, textarea, select";
-    document.querySelectorAll(hoverTargets).forEach((el) => {
-      el.addEventListener("mouseenter", () => cursorRing.classList.add("is-hovering"));
-      el.addEventListener("mouseleave", () => cursorRing.classList.remove("is-hovering"));
-    });
+    document.addEventListener("mouseleave", () => cursorGlow.classList.remove("active"));
   }
 }

@@ -451,19 +451,24 @@ header, main, footer { position: relative; z-index: 2; }
   transform-style: preserve-3d;
   transition: transform .5s var(--ease);
 }
-/* gold underline that draws in from the left */
+/* Always-visible gold rule under the label: the call to action has to carry
+   weight on its own now that there is no box around it. */
 .cta-label::after {
   content: "";
   position: absolute;
   left: 0;
-  bottom: -5px;
-  height: 1.5px;
-  width: 0;
-  background: linear-gradient(90deg, var(--gold-ink), var(--gold), var(--gold-light));
-  transition: width .5s var(--ease);
+  right: 0;
+  bottom: -7px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold-ink), var(--gold) 45%, var(--gold-light) 55%, var(--gold-ink));
+  background-size: 220% 100%;
+  animation: goldSheen 5s ease-in-out infinite;
+  transform-origin: left;
+  transition: height .35s var(--ease), bottom .35s var(--ease);
 }
 .cta:hover { color: var(--gold-dim) !important; }
-.cta:hover .cta-label::after { width: 100%; }
+.cta:hover .cta-label::after { height: 3px; bottom: -8px; }
 .cta:hover .cta-label { transform: translateZ(26px); }
 
 .cta-orb {
@@ -486,6 +491,13 @@ header, main, footer { position: relative; z-index: 2; }
   opacity: 0;
   transition: opacity .45s var(--ease);
 }
+/* primary action: the orb reads as filled gold from the start */
+.cta-hero .cta-orb,
+.cta-nav .cta-orb { border-color: transparent; }
+.cta-hero .cta-orb::before,
+.cta-nav .cta-orb::before { opacity: 1; }
+.cta-hero .cta-orb-arrow,
+.cta-nav .cta-orb-arrow { color: var(--ink); }
 .cta-orb-arrow {
   position: relative;
   font-size: .95rem;
@@ -512,15 +524,39 @@ header, main, footer { position: relative; z-index: 2; }
 }
 .cta-hero:hover .cta-orb,
 .cta-nav:hover .cta-orb { animation: none; }
-.cta-hero { font-size: 1.02rem; }
 
-/* secondary call to action: same language, quieter weight */
-.cta-quiet { color: var(--text-dim) !important; font-weight: 500; }
-.cta-quiet:hover { color: var(--gold-ink) !important; }
-.cta-quiet .cta-orb-arrow { color: var(--text-dim); }
-.cta-quiet:hover .cta-orb { transform: translateZ(24px) scale(1.08); }
+/* Hero primary: display weight so it holds the eye without a container */
+.cta-hero {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 1.24rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  gap: 16px;
+}
+.cta-hero .cta-orb { width: 42px; height: 42px; }
+.cta-hero .cta-orb-arrow { font-size: 1.1rem; }
+
+/* Secondary: same construction, outlined orb, quieter but clearly a control */
+.cta-quiet {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--gold-ink) !important;
+}
+.cta-quiet .cta-label::after {
+  background: linear-gradient(90deg, var(--border), var(--gold) 50%, var(--border));
+  height: 1.5px;
+  opacity: .8;
+}
+.cta-quiet .cta-orb { border-color: var(--gold); }
+.cta-quiet .cta-orb-arrow { color: var(--gold-ink); }
+.cta-quiet:hover .cta-orb {
+  transform: translateZ(24px) scale(1.1);
+  border-color: transparent;
+}
+.cta-quiet:hover .cta-orb::before { opacity: 1; }
 .cta-quiet:hover .cta-orb-arrow { color: var(--ink); transform: translateY(2px); }
-.cta-orb-down { width: 30px; height: 30px; }
+.cta-orb-down { width: 38px; height: 38px; }
 
 .nav-toggle {
   display: none;

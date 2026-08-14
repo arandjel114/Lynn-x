@@ -2108,3 +2108,17 @@ h1 .word:last-child {
   .assistant-msg,
   .assistant-chip { transition-duration: .01ms; animation: none; }
 }
+
+.assistant-foot a {
+  color: var(--gold-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.assistant-foot a:hover { color: var(--text); }
+
+.assistant-form input:disabled,
+.assistant-form button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+.assistant-form button:disabled:hover { transform: none; }

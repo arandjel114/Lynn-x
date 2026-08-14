@@ -1,8 +1,23 @@
 /* Lynn — der Assistent von Lynq-x.
-   Läuft vollständig im Browser: keine Server, keine API, keine Cookies,
-   kein Local Storage. Damit bleibt die Datenschutzerklärung so schlank wie sie ist. */
+
+   Zwei Betriebsarten:
+
+   1. Mit API_ENDPOINT: echte KI. Die Anfrage geht an den eigenen Cloudflare
+      Worker (Ordner /worker), der sie an Claude weiterreicht. Der API-Schlüssel
+      liegt dort und ist im Browser niemals sichtbar.
+
+   2. Ohne API_ENDPOINT (oder wenn der Worker nicht erreichbar ist): die fest
+      hinterlegte Wissensbasis weiter unten. Der Chat funktioniert also immer,
+      auch wenn der Server aus ist.
+
+   Gespeichert wird in beiden Fällen nichts — kein Cookie, kein Local Storage.
+   Der Verlauf lebt nur im Arbeitsspeicher des Browsers. */
 (() => {
   "use strict";
+
+  /* Nach dem Deploy des Workers hier dessen URL eintragen, z. B.
+     "https://lynq-x-assistant.dein-name.workers.dev". Siehe worker/README.md. */
+  const API_ENDPOINT = "";
 
   const MAIL = "kontakt-lynq-x@outlook.de";
   const HOME = document.body.classList.contains("legal-page") ? "index.html" : "";
@@ -124,7 +139,7 @@
     {
       id: "datenschutz",
       keys: ["datenschutz", "dsgvo", "cookie", "tracking", "daten", "speicher", "impressum", "rechtlich"],
-      answer: `Diese Seite setzt keine Cookies, bindet kein Tracking ein und lädt nichts von fremden Servern nach — deshalb gibt es hier auch kein Cookie-Banner.<br><br>Auch dieser Chat läuft komplett in deinem Browser: nichts davon wird gesendet oder gespeichert. Details: <a href="datenschutz.html">Datenschutz</a> und <a href="impressum.html">Impressum</a>.`,
+      answer: `Diese Seite setzt keine Cookies, bindet kein Tracking ein und lädt nichts von fremden Servern nach — deshalb gibt es hier auch kein Cookie-Banner.<br><br>Was mit deinen Chat-Nachrichten passiert, steht in der <a href="datenschutz.html">Datenschutzerklärung</a> unter Ziffer 6. Gespeichert wird der Verlauf in keinem Fall. Auch das <a href="impressum.html">Impressum</a> findest du dort.`,
       chips: ["Wer seid ihr?", "Wie erreiche ich euch?"]
     },
     {
@@ -216,7 +231,11 @@
         <input type="text" id="asstInput" placeholder="Frag mich etwas…" maxlength="300">
         <button type="submit" aria-label="Frage senden"><span aria-hidden="true">&rarr;</span></button>
       </form>
-      <p class="assistant-foot">Läuft lokal in deinem Browser. Nichts wird gespeichert.</p>
+      <p class="assistant-foot">${
+        API_ENDPOINT
+          ? 'KI-Assistent. Antworten können Fehler enthalten. <a href="datenschutz.html">Datenschutz</a>'
+          : "Läuft lokal in deinem Browser. Nichts wird gespeichert."
+      }</p>
     </div>`;
   document.body.appendChild(root);
 
@@ -260,19 +279,128 @@
     return row;
   }
 
-  function ask(text) {
-    const clean = text.trim();
-    if (!clean) return;
-    addMessage("user", clean.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])));
-    setChips([]);
+  const escapeHtml = (s) =>
+    s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+
+  /* Der Bot liefert reinen Text. Aus E-Mail-Adressen und Telefonnummern
+     machen wir hier klickbare Links — sonst wird nichts interpretiert. */
+  function renderText(text) {
+    return escapeHtml(text)
+      .replace(/([\w.+-]+@[\w-]+\.[\w.]+)/g, '<a href="mailto:$1">$1</a>')
+      .replace(/\b0151\s?74367509\b/g, '<a href="tel:+4915174367509">$&</a>')
+      .replace(/\n/g, "<br>");
+  }
+
+  /* Gesprächsverlauf für die API. Nur im Arbeitsspeicher, nie gespeichert. */
+  const history = [];
+  let busy = false;
+
+  function setBusy(state) {
+    busy = state;
+    input.disabled = state;
+    form.querySelector("button").disabled = state;
+  }
+
+  /* Antwort aus der lokalen Wissensbasis — Rückfallebene und Betrieb ohne Server. */
+  function answerLocally(question) {
     const pending = typing();
-    const entry = findAnswer(clean) || FALLBACK;
+    const entry = findAnswer(question) || FALLBACK;
     const delay = 380 + Math.min(700, entry.answer.length * 1.6);
     window.setTimeout(() => {
       pending.remove();
       addMessage("bot", entry.answer);
       setChips(entry.chips && entry.chips.length ? entry.chips : START_CHIPS.slice(0, 3));
+      setBusy(false);
     }, delay);
+  }
+
+  /* Antwort vom eigenen Worker, Stück für Stück gestreamt (NDJSON). */
+  async function answerFromApi(question) {
+    const pending = typing();
+    let bubble = null;
+    let text = "";
+    let serverError = "";
+
+    const show = (chunk) => {
+      text += chunk;
+      if (!bubble) {
+        pending.remove();
+        bubble = addMessage("bot", "").querySelector(".assistant-bubble");
+      }
+      bubble.innerHTML = renderText(text);
+      log.scrollTop = log.scrollHeight;
+    };
+
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history.concat([{ role: "user", content: question }]) }),
+      });
+
+      if (!response.ok || !response.body) {
+        const detail = await response.json().catch(() => null);
+        throw new Error((detail && detail.message) || "Server nicht erreichbar");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const raw of lines) {
+          if (!raw.trim()) continue;
+          let event;
+          try {
+            event = JSON.parse(raw);
+          } catch {
+            continue;
+          }
+          if (event.type === "delta") show(event.text);
+          else if (event.type === "error") serverError = event.message;
+        }
+      }
+
+      /* Fehler erst anhängen, wenn schon eine Antwort begonnen hat. Kam gar
+         nichts an, ist die lokale Wissensbasis die bessere Rückfallebene. */
+      if (!text.trim()) throw new Error(serverError || "Leere Antwort");
+      if (serverError) show("\n\n" + serverError);
+
+      history.push({ role: "user", content: question });
+      history.push({ role: "assistant", content: text });
+      /* Verlauf begrenzen, damit lange Gespräche nicht ausufern. */
+      while (history.length > 20) history.shift();
+
+      setChips(START_CHIPS.slice(0, 3));
+    } catch (error) {
+      if (bubble) {
+        bubble.innerHTML = renderText(
+          text + (text ? "\n\n" : "") + "Der Rest ist unterwegs verloren gegangen. Frag gern noch einmal.",
+        );
+        setChips(START_CHIPS.slice(0, 3));
+      } else {
+        /* Noch nichts angekommen: lokal antworten, statt den Besucher stehen zu lassen. */
+        pending.remove();
+        answerLocally(question);
+        return;
+      }
+    }
+    setBusy(false);
+  }
+
+  function ask(text) {
+    const clean = text.trim();
+    if (!clean || busy) return;
+    addMessage("user", escapeHtml(clean));
+    setChips([]);
+    setBusy(true);
+    if (API_ENDPOINT) answerFromApi(clean);
+    else answerLocally(clean);
   }
 
   function start() {

@@ -1,0 +1,19 @@
+{
+  "name": "lynq-x-assistant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker: KI-Assistent Lynn fuer lynq-x.de",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^3.99.0"
+  }
+}

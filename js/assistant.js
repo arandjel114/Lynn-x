@@ -1,0 +1,315 @@
+/* Lynn — der Assistent von Lynq-x.
+   Läuft vollständig im Browser: keine Server, keine API, keine Cookies,
+   kein Local Storage. Damit bleibt die Datenschutzerklärung so schlank wie sie ist. */
+(() => {
+  "use strict";
+
+  const MAIL = "kontakt-lynq-x@outlook.de";
+  const HOME = document.body.classList.contains("legal-page") ? "index.html" : "";
+
+  const link = (hash, label) => `<a href="${HOME}${hash}">${label}</a>`;
+
+  /* Wissensbasis. Jeder Eintrag: Auslöser (Wortstämme) + Antwort + optionale Folgefragen. */
+  const KNOWLEDGE = [
+    {
+      id: "preis",
+      keys: ["preis", "kost", "teuer", "günstig", "budget", "euro", "€", "was zahl", "honorar", "angebot", "rechnung", "rate"],
+      answer: `Feste Paketpreise gibt es bei uns bewusst nicht — jedes Projekt hat einen anderen Umfang. Eine schlanke Seite mit fünf Abschnitten liegt deutlich unter einem Shop mit Zahlungsanbindung.<br><br>So läuft es: kurzes Erstgespräch, danach ein schriftliches Festpreis-Angebot. Keine Überraschungen auf der Rechnung.`,
+      chips: ["Wie lange dauert das?", "Wie läuft ein Projekt ab?"]
+    },
+    {
+      id: "dauer",
+      keys: ["dauer", "lang", "zeit", "wann fertig", "schnell", "wochen", "termin bis", "deadline", "eilig"],
+      answer: `Die erste sichtbare Version steht meistens innerhalb von zwei Wochen. Wie schnell es danach live geht, hängt vor allem davon ab, wie zügig Texte, Bilder und Freigaben von dir kommen.<br><br>Den realistischen Zeitrahmen bekommst du schriftlich im Angebot — nicht als Schätzung im Nachhinein.`,
+      chips: ["Was kostet das?", "Was brauchst du von mir?"]
+    },
+    {
+      id: "ablauf",
+      keys: ["ablauf", "prozess", "wie läuft", "schritte", "vorgehen", "start", "anfang", "beginnen", "wie fange"],
+      answer: `In vier Schritten: <strong>Verstehen</strong> (was soll die Seite leisten), <strong>Entwerfen</strong> (Struktur und Design), <strong>Bauen</strong> (handprogrammiert, kein Baukasten), <strong>Begleiten</strong> (nach dem Livegang geht es weiter).<br><br>Den ganzen Ablauf im Detail findest du hier: ${link("#ablauf", "Ablauf ansehen")}.`,
+      chips: ["Was brauchst du von mir?", "Projekt anfragen"]
+    },
+    {
+      id: "leistungen",
+      /* Bewusst ohne allgemeine Frage-Floskeln wie "könnt ihr" — die stehen in
+         jeder zweiten Frage und würden speziellere Themen überstimmen. */
+      keys: ["leistung", "was macht ihr", "was bietet ihr", "was bietet lynq", "angebot an", "services"],
+      answer: `Vier Bereiche: Webdesign &amp; Entwicklung, Conversion-Strategie, SEO &amp; Sichtbarkeit sowie Branding.<br><br>Alles davon einzeln oder als Gesamtpaket — je nachdem, was bei dir schon steht. ${link("#leistungen", "Leistungen ansehen")}`,
+      chips: ["Macht ihr auch SEO?", "Baut ihr Onlineshops?"]
+    },
+    {
+      id: "seo",
+      keys: ["seo", "google", "sichtbar", "ranking", "gefunden werden", "suchmaschine", "platz 1", "keywords"],
+      answer: `Ja. Technisches Fundament (Ladezeit, Struktur, saubere Auszeichnung) ist bei jeder Seite dabei. Darüber hinaus arbeiten wir an Inhalten und lokaler Sichtbarkeit.<br><br>Was wir nicht versprechen: Platz 1 bis nächsten Monat. Wer das verspricht, verkauft dir Zufall.`,
+      chips: ["Macht ihr auch Marketing?", "Was kostet das?"]
+    },
+    {
+      id: "marketing",
+      keys: ["marketing", "werbung", "ads", "google ads", "social", "instagram", "kampagne", "reichweite"],
+      answer: `Ja — aber nur, wenn die Seite dahinter trägt. Werbebudget auf eine Seite zu leiten, die nicht konvertiert, ist verbranntes Geld.<br><br>Deshalb schauen wir zuerst auf Struktur und Conversion, danach auf Kampagnen und Sichtbarkeit.`,
+      chips: ["Macht ihr auch SEO?", "Projekt anfragen"]
+    },
+    {
+      id: "shop",
+      keys: ["shop", "onlineshop", "verkauf", "e-commerce", "ecommerce", "bezahl", "zahlung", "warenkorb", "produkte verkauf"],
+      answer: `Ja, Onlineshops mit Zahlungsanbindung sind möglich. Das ist der aufwendigste Projekttyp — dafür brauchen wir im Erstgespräch ein paar Details mehr: Produktanzahl, Versand, Zahlungsarten.`,
+      chips: ["Was kostet das?", "Projekt anfragen"]
+    },
+    {
+      id: "privat",
+      keys: ["privat", "privatperson", "einzelperson", "kleines", "verein", "selbstständ", "freiberuf", "start-up", "startup", "gründ"],
+      answer: `Ja, ausdrücklich. Unternehmen, Vereine, Selbstständige und Privatpersonen — der Ablauf ist derselbe. Der Umfang wird an dein Vorhaben angepasst, nicht an eine Firmengröße.`,
+      chips: ["Was kostet das?", "Wie läuft ein Projekt ab?"]
+    },
+    {
+      id: "pflege",
+      keys: ["pflege", "selbst ändern", "bearbeiten", "aktualis", "update", "wartung", "betreuung", "ändern lassen", "inhalte ändern"],
+      answer: `Beides geht. Du bekommst Zugriff und eine kurze Einweisung, wenn du selbst pflegen willst. Wenn dir das zu viel ist, übernehmen wir die laufende Pflege im Rahmen der Betreuung.<br><br>Du bist in keinem Fall an uns gebunden — die Seite gehört dir.`,
+      chips: ["Wem gehört die Website?", "Was kostet das?"]
+    },
+    {
+      id: "eigentum",
+      keys: ["gehört", "eigentum", "rechte", "mitnehmen", "wechseln", "kündig", "vertrag", "bindung", "abo"],
+      answer: `Dir. Domain, Inhalte und die fertige Seite laufen auf deinen Namen. Kein Abo-Zwang, keine Knebelverträge, kein Baukasten, den du nur mieten kannst.`,
+      chips: ["Wer hostet die Seite?", "Kann ich selbst pflegen?"]
+    },
+    {
+      id: "hosting",
+      keys: ["hosting", "hoster", "server", "domain", "webspace", "wo liegt", "strato", "ionos", "e-mail adresse"],
+      answer: `Auf Wunsch kümmern wir uns um Domain und Hosting inklusive SSL und E-Mail-Adressen. Wenn du schon einen Anbieter hast, arbeiten wir mit dem weiter — ein Umzug ist kein Muss.`,
+      chips: ["Wem gehört die Website?", "Projekt anfragen"]
+    },
+    {
+      id: "technik",
+      keys: ["wordpress", "baukasten", "wix", "template", "vorlage", "welche technik", "programmiert", "cms", "framework"],
+      answer: `Handprogrammiert — HTML, CSS und JavaScript, kein Baukasten und keine gekaufte Vorlage. Das ist der Grund, warum die Seiten schnell laden und sich nicht wie tausend andere anfühlen.<br><br>Wenn du ein CMS zum Selbstpflegen brauchst, binden wir eines ein, das zu deinem Projekt passt.`,
+      chips: ["Kann ich selbst pflegen?", "Ist die Seite mobil optimiert?"]
+    },
+    {
+      id: "mobil",
+      keys: ["mobil", "handy", "smartphone", "responsive", "tablet", "auf dem telefon"],
+      answer: `Selbstverständlich. Mobil wird zuerst gedacht, nicht am Ende nachgerüstet — bei den meisten Kunden kommt über die Hälfte der Besucher vom Handy.`,
+      chips: ["Wie schnell lädt die Seite?", "Projekt anfragen"]
+    },
+    {
+      id: "speed",
+      keys: ["schnell lädt", "ladezeit", "performance", "geschwindigkeit", "pagespeed", "langsam"],
+      answer: `Ladezeit ist Teil der Arbeit, kein Extra. Keine aufgeblähten Plugin-Stapel, optimierte Bilder, sauberer Code. Das zahlt gleichzeitig auf Google und auf deine Absprungrate ein.`,
+      chips: ["Macht ihr auch SEO?", "Welche Technik nutzt ihr?"]
+    },
+    {
+      id: "material",
+      keys: ["brauchst du von mir", "was muss ich", "texte", "bilder", "fotos", "logo", "material", "vorbereiten", "liefern"],
+      answer: `Am Anfang reicht: Was machst du, für wen, und was soll die Seite bewirken. Texte und Bilder können später kommen — bei Bedarf schreiben wir die Texte mit dir zusammen.<br><br>Ein Logo ist schön, aber keine Voraussetzung. Branding gehört mit zu unseren Leistungen.`,
+      chips: ["Wie läuft ein Projekt ab?", "Projekt anfragen"]
+    },
+    {
+      id: "kontakt",
+      keys: ["kontakt", "erreich", "anrufen", "telefon", "mail", "e-mail", "melden", "gespräch", "termin", "beraten", "anfrage", "projekt anfragen"],
+      answer: `Am schnellsten per E-Mail an <a href="mailto:${MAIL}">${MAIL}</a> oder telefonisch unter <a href="tel:+4915174367509">0151 74367509</a>.<br><br>Oder du füllst das Formular aus: ${link("#kontakt", "zum Kontaktformular")}. Antwort kommt in der Regel innerhalb eines Werktags.`,
+      chips: ["Wo sitzt ihr?", "Was kostet das?"]
+    },
+    {
+      id: "standort",
+      keys: ["wo sitz", "standort", "köln", "koeln", "vor ort", "remote", "adresse", "wo seid ihr", "deutschland"],
+      answer: `Wir sitzen in Köln und arbeiten deutschlandweit remote. Für Projekte in und um Köln geht ein Treffen vor Ort natürlich auch.`,
+      chips: ["Wie erreiche ich euch?", "Projekt anfragen"]
+    },
+    {
+      id: "wer",
+      keys: ["wer bist du", "wer seid ihr", "über euch", "team", "agentur", "lynq", "was ist lynq"],
+      answer: `Lynq-x ist eine Webdesign- und Marketingagentur aus Köln, geführt von Arandjel Jovanovic. Kleine Struktur, direkte Ansprache — du redest mit der Person, die auch baut.<br><br>Ich bin Lynn, der Assistent auf dieser Seite. Ich beantworte die häufigsten Fragen; alles Konkrete klärt Arandjel persönlich.`,
+      chips: ["Wie läuft ein Projekt ab?", "Wie erreiche ich euch?"]
+    },
+    {
+      id: "datenschutz",
+      keys: ["datenschutz", "dsgvo", "cookie", "tracking", "daten", "speicher", "impressum", "rechtlich"],
+      answer: `Diese Seite setzt keine Cookies, bindet kein Tracking ein und lädt nichts von fremden Servern nach — deshalb gibt es hier auch kein Cookie-Banner.<br><br>Auch dieser Chat läuft komplett in deinem Browser: nichts davon wird gesendet oder gespeichert. Details: <a href="datenschutz.html">Datenschutz</a> und <a href="impressum.html">Impressum</a>.`,
+      chips: ["Wer seid ihr?", "Wie erreiche ich euch?"]
+    },
+    {
+      id: "bot",
+      keys: ["bist du ein bot", "bist du echt", "künstliche intelligenz", "ki", "roboter", "mensch"],
+      answer: `Ich bin ein Assistent, kein Mensch — und ich erfinde nichts. Ich gebe nur Auskunft über Dinge, die auf dieser Seite stehen.<br><br>Sobald es um dein konkretes Projekt geht, ist ein echtes Gespräch besser: ${link("#kontakt", "Projekt anfragen")}.`,
+      chips: ["Was kostet das?", "Wie erreiche ich euch?"]
+    },
+    {
+      id: "gruss",
+      keys: ["hallo", "hi ", "hey", "guten tag", "moin", "servus", "guten morgen", "guten abend"],
+      answer: `Hallo! Frag einfach los — Preise, Ablauf, Technik oder was du sonst wissen willst.`,
+      chips: ["Was kostet eine Website?", "Wie läuft ein Projekt ab?"]
+    },
+    {
+      id: "danke",
+      keys: ["danke", "dankeschön", "top", "super", "perfekt", "alles klar", "tschüss", "ciao"],
+      answer: `Gern. Wenn du loslegen willst: ${link("#kontakt", "Projekt anfragen")} — oder schreib direkt an <a href="mailto:${MAIL}">${MAIL}</a>.`,
+      chips: []
+    }
+  ];
+
+  const START_CHIPS = ["Was kostet eine Website?", "Wie läuft ein Projekt ab?", "Wie lange dauert das?", "Macht ihr auch SEO?"];
+
+  const normalize = (s) =>
+    s.toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .replace(/[^\wäöüß\s€-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const normKey = (k) =>
+    k.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
+
+  /* Am Wortanfang matchen, nicht irgendwo im Wort: sonst steckt "ki" in "Tokio". */
+  const matcherCache = new Map();
+  function matcher(key) {
+    let re = matcherCache.get(key);
+    if (!re) {
+      const k = normKey(key).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      re = new RegExp("(?:^|\\s)" + k, "i");
+      matcherCache.set(key, re);
+    }
+    return re;
+  }
+
+  function findAnswer(input) {
+    const text = " " + normalize(input) + " ";
+    let best = null;
+    let bestScore = 0;
+    for (const entry of KNOWLEDGE) {
+      let score = 0;
+      for (const key of entry.keys) {
+        const k = normKey(key).trim();
+        if (matcher(key).test(text)) score += k.length >= 6 ? 3 : 2;
+      }
+      if (score > bestScore) { bestScore = score; best = entry; }
+    }
+    return bestScore >= 2 ? best : null;
+  }
+
+  const FALLBACK = {
+    answer: `Dazu finde ich hier nichts Belastbares — und raten hilft dir nicht weiter.<br><br>Schreib die Frage am besten direkt an <a href="mailto:${MAIL}">${MAIL}</a>, dann bekommst du eine richtige Antwort.`,
+    chips: ["Was kostet eine Website?", "Wie läuft ein Projekt ab?", "Wie erreiche ich euch?"]
+  };
+
+  /* ---------- Aufbau ---------- */
+
+  const root = document.createElement("div");
+  root.className = "assistant";
+  root.innerHTML = `
+    <button class="assistant-launcher" type="button" id="asstLauncher" aria-expanded="false" aria-controls="asstPanel">
+      <span class="assistant-launcher-orb" aria-hidden="true"></span>
+      <span class="assistant-launcher-label">Frag Lynn</span>
+    </button>
+    <div class="assistant-panel" id="asstPanel" role="dialog" aria-modal="false" aria-label="Chat mit Lynn" hidden>
+      <div class="assistant-head">
+        <span class="assistant-avatar" aria-hidden="true">L</span>
+        <span class="assistant-ident">
+          <strong>Lynn</strong>
+          <em>Assistent von Lynq-x</em>
+        </span>
+        <button class="assistant-close" type="button" id="asstClose" aria-label="Chat schließen">&times;</button>
+      </div>
+      <div class="assistant-log" id="asstLog" role="log" aria-live="polite"></div>
+      <div class="assistant-chips" id="asstChips"></div>
+      <form class="assistant-form" id="asstForm" autocomplete="off">
+        <label class="visually-hidden" for="asstInput">Deine Frage</label>
+        <input type="text" id="asstInput" placeholder="Frag mich etwas…" maxlength="300">
+        <button type="submit" aria-label="Frage senden"><span aria-hidden="true">&rarr;</span></button>
+      </form>
+      <p class="assistant-foot">Läuft lokal in deinem Browser. Nichts wird gespeichert.</p>
+    </div>`;
+  document.body.appendChild(root);
+
+  const launcher = root.querySelector("#asstLauncher");
+  const panel = root.querySelector("#asstPanel");
+  const closeBtn = root.querySelector("#asstClose");
+  const log = root.querySelector("#asstLog");
+  const chipsWrap = root.querySelector("#asstChips");
+  const form = root.querySelector("#asstForm");
+  const input = root.querySelector("#asstInput");
+
+  let started = false;
+
+  function addMessage(who, html) {
+    const row = document.createElement("div");
+    row.className = "assistant-msg assistant-msg-" + who;
+    const bubble = document.createElement("div");
+    bubble.className = "assistant-bubble";
+    bubble.innerHTML = html;
+    row.appendChild(bubble);
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+    return row;
+  }
+
+  function setChips(list) {
+    chipsWrap.innerHTML = "";
+    (list || []).forEach((label) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "assistant-chip";
+      chip.textContent = label;
+      chip.addEventListener("click", () => ask(label));
+      chipsWrap.appendChild(chip);
+    });
+  }
+
+  function typing() {
+    const row = addMessage("bot", `<span class="assistant-dots"><i></i><i></i><i></i></span>`);
+    row.classList.add("is-typing");
+    return row;
+  }
+
+  function ask(text) {
+    const clean = text.trim();
+    if (!clean) return;
+    addMessage("user", clean.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])));
+    setChips([]);
+    const pending = typing();
+    const entry = findAnswer(clean) || FALLBACK;
+    const delay = 380 + Math.min(700, entry.answer.length * 1.6);
+    window.setTimeout(() => {
+      pending.remove();
+      addMessage("bot", entry.answer);
+      setChips(entry.chips && entry.chips.length ? entry.chips : START_CHIPS.slice(0, 3));
+    }, delay);
+  }
+
+  function start() {
+    if (started) return;
+    started = true;
+    addMessage("bot", `Hi, ich bin <strong>Lynn</strong> — der Assistent von Lynq-x.<br><br>Ich beantworte Fragen zu Preisen, Ablauf, Technik und Betreuung. Was willst du wissen?`);
+    setChips(START_CHIPS);
+  }
+
+  function open() {
+    panel.hidden = false;
+    // Reflow erzwingen, damit der Übergang greift.
+    void panel.offsetWidth;
+    root.classList.add("is-open");
+    launcher.setAttribute("aria-expanded", "true");
+    start();
+    window.setTimeout(() => input.focus({ preventScroll: true }), 220);
+  }
+
+  function close() {
+    root.classList.remove("is-open");
+    launcher.setAttribute("aria-expanded", "false");
+    window.setTimeout(() => { panel.hidden = true; }, 260);
+    launcher.focus({ preventScroll: true });
+  }
+
+  launcher.addEventListener("click", () => (root.classList.contains("is-open") ? close() : open()));
+  closeBtn.addEventListener("click", close);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && root.classList.contains("is-open")) close();
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const value = input.value;
+    input.value = "";
+    ask(value);
+  });
+})();

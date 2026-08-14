@@ -23,10 +23,32 @@ nav.querySelectorAll("a").forEach((link) => {
 const form = document.getElementById("contactForm");
 const formNote = document.getElementById("formNote");
 
+/* The site is statically hosted, so there is no server to post to. The form
+   therefore hands the message to the visitor's own mail client, addressed to
+   us. Previously it only printed a thank-you and discarded the input, which
+   meant enquiries were silently lost. */
+const CONTACT_ADDRESS = "kontakt-lynq-x@outlook.de";
+
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  formNote.textContent = "Danke! Deine Nachricht wurde erfasst. Wir melden uns in Kürze bei dir.";
-  form.reset();
+
+  const name = form.name.value.trim();
+  const email = form.email.value.trim();
+  const typ = form.typ.options[form.typ.selectedIndex].text;
+  const nachricht = form.nachricht.value.trim();
+
+  const subject = `Projektanfrage von ${name}`;
+  const body =
+    `Name: ${name}\n` +
+    `E-Mail: ${email}\n` +
+    `Ich bin: ${typ}\n\n` +
+    `${nachricht}\n`;
+
+  window.location.href =
+    `mailto:${CONTACT_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  formNote.textContent =
+    "Dein E-Mail-Programm öffnet sich mit der fertigen Nachricht. Bitte dort auf Senden klicken.";
 });
 
 /* ---------- Count-up numbers ---------- */

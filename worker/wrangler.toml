@@ -1,17 +1,17 @@
 name = "lynq-x-assistant"
-main = "src/index.ts"
-compatibility_date = "2025-01-01"
-compatibility_flags = ["nodejs_compat"]
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# Das Sprachmodell laeuft bei Cloudflare selbst — kein API-Schluessel noetig.
+[ai]
+binding = "AI"
 
 [vars]
 ALLOWED_ORIGINS = "https://lynq-x.de,https://www.lynq-x.de"
 
-# Der API-Schluessel ist KEINE Variable, sondern ein Secret:
-#   npx wrangler secret put ANTHROPIC_API_KEY
-#
-# Optionale Rate-Begrenzung. Erst anlegen:
+# Optionale Begrenzung pro Besucher. Erst anlegen:
 #   npx wrangler kv namespace create RATE_LIMIT
-# Dann die ausgegebene id hier eintragen und die drei Zeilen einkommentieren.
+# Dann die ausgegebene id eintragen und die drei Zeilen einkommentieren.
 #
 # [[kv_namespaces]]
 # binding = "RATE_LIMIT"

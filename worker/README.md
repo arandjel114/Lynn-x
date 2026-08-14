@@ -1,81 +1,91 @@
 # Lynn — der KI-Assistent von lynq-x.de
 
-Dieser Ordner enthält den kleinen Server, der zwischen der Website und der
-Claude-API sitzt. Er existiert aus genau einem Grund: **der API-Schlüssel darf
-niemals im Browser landen.** Läge er im JavaScript der Website, könnte ihn jeder
-Besucher auslesen und auf deine Rechnung Anfragen stellen.
+Dieser Ordner enthält den kleinen Server, der zwischen deiner Website und dem
+Sprachmodell sitzt. Er läuft **komplett kostenlos** auf deinem Cloudflare-Account.
 
-Der Ablauf ist deshalb: Browser → dein Worker → Anthropic → zurück.
+Kein API-Schlüssel, keine Kreditkarte, keine Rechnung: Cloudflare betreibt das
+Sprachmodell selbst (das nennt sich *Workers AI*) und stellt dir jeden Tag ein
+Gratis-Kontingent zur Verfügung. Dein Worker spricht das Modell direkt an —
+es ist gar kein zweiter Anbieter im Spiel, bei dem du etwas bezahlen müsstest.
 
 Solange der Worker nicht eingerichtet ist, läuft der Assistent auf der Website
 weiter — dann eben mit den fest hinterlegten Antworten statt mit echter KI.
-Es geht also nichts kaputt, wenn du dir mit den Schritten Zeit lässt.
+Es geht also nichts kaputt, wenn du dir Zeit lässt.
 
 ---
 
-## Was du brauchst
+## Weg A: Ohne Terminal, direkt im Browser (empfohlen)
 
-1. **Einen Cloudflare-Account** — kostenlos, [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up).
-   Bei deinem Anfragevolumen bleibst du im Gratis-Kontingent (100.000 Anfragen
-   pro Tag).
-2. **Einen Anthropic-API-Schlüssel** — [console.anthropic.com](https://console.anthropic.com)
-   → Settings → API Keys → *Create Key*. Der Schlüssel wird nur einmal
-   angezeigt, also gleich sichern. Guthaben aufladen nicht vergessen (Billing);
-   20 € reichen für sehr viele Gespräche.
-3. **Node.js** auf deinem Rechner — [nodejs.org](https://nodejs.org), Version 20
-   oder neuer.
+Du brauchst nur deinen Cloudflare-Account. Kein Node.js, keine Installation.
 
----
+**1. Worker anlegen**
 
-## Einrichten (einmalig, ca. 10 Minuten)
+- [dash.cloudflare.com](https://dash.cloudflare.com) öffnen
+- Links im Menü: **Compute (Workers)** → **Workers & Pages**
+- **Create** → **Start with Hello World!** → **Deploy**
+- Als Namen `lynq-x-assistant` eintragen
 
-Terminal öffnen und in diesen Ordner wechseln:
+**2. Code einfügen**
 
-```bash
-cd worker
-npm install
-```
+- Beim erstellten Worker auf **Edit code** (bzw. **Bearbeiten**) klicken
+- Den kompletten vorhandenen Inhalt löschen
+- Den kompletten Inhalt der Datei `worker/worker.js` aus diesem Repository
+  hineinkopieren
+- Oben rechts auf **Deploy**
 
-Bei Cloudflare anmelden — das öffnet den Browser:
+**3. Das Sprachmodell freischalten**
 
-```bash
-npx wrangler login
-```
+Das ist der entscheidende Schritt — ohne ihn kennt der Worker kein Modell.
 
-Den API-Schlüssel hinterlegen. Er wird verschlüsselt bei Cloudflare gespeichert
-und taucht danach in keiner Datei mehr auf:
+- Zurück zur Übersicht des Workers → Reiter **Settings** → **Bindings**
+  (bei manchen Ansichten: **Variables and Secrets** → daneben **Bindings**)
+- **Add binding** → Typ **Workers AI** wählen
+- Als *Variable name* exakt `AI` eintragen (nur diese zwei Buchstaben)
+- Speichern und **Deploy**
 
-```bash
-npx wrangler secret put ANTHROPIC_API_KEY
-```
+**4. Deine Domain eintragen**
 
-Nach dem Befehl den Schlüssel einfügen und Enter drücken.
+- Gleicher Bereich, **Add binding** → Typ **Environment variable** (Text)
+- Name: `ALLOWED_ORIGINS`
+- Wert: `https://lynq-x.de,https://www.lynq-x.de`
+- Speichern und **Deploy**
 
-Veröffentlichen:
+**5. Die URL holen**
 
-```bash
-npm run deploy
-```
-
-Am Ende gibt Wrangler eine URL aus, etwa:
+Oben auf der Worker-Seite steht eine Adresse in der Form
 
 ```
 https://lynq-x-assistant.DEIN-NAME.workers.dev
 ```
 
-**Diese URL brauchst du im nächsten Schritt.**
+Die brauchst du gleich.
 
 ---
 
-## Die Website mit dem Worker verbinden
+## Weg B: Mit Terminal
 
-In `js/assistant.js` (im Hauptordner, nicht hier) steht ganz oben:
+Falls du lieber im Terminal arbeitest — Node.js vorausgesetzt:
+
+```bash
+cd worker
+npx wrangler login
+npx wrangler deploy
+```
+
+Die AI-Bindung und `ALLOWED_ORIGINS` stehen bereits in `wrangler.toml`, es ist
+also nichts weiter zu konfigurieren.
+
+---
+
+## Zum Schluss: Website verbinden
+
+In `js/assistant.js` (im Hauptordner, nicht hier) steht in Zeile 20:
 
 ```js
 const API_ENDPOINT = "";
 ```
 
-Dort die URL von eben eintragen:
+Dort die Worker-URL eintragen:
 
 ```js
 const API_ENDPOINT = "https://lynq-x-assistant.DEIN-NAME.workers.dev";
@@ -85,63 +95,73 @@ Speichern, committen, pushen. Ab dann läuft der Assistent mit echter KI.
 
 ---
 
-## Missbrauch begrenzen (empfohlen)
+## Was "kostenlos" hier genau heißt
 
-Ohne Begrenzung könnte jemand den Chat in einer Schleife ansprechen und Kosten
-verursachen. Zwei Zeilen Aufwand:
+Cloudflare rechnet Workers AI in *Neuronen* ab. Im Gratis-Kontingent stehen dir
+**10.000 Neuronen pro Tag** zu, die jede Nacht um 01:00 Uhr deutscher Zeit
+zurückgesetzt werden. Eine Kreditkarte wird nicht verlangt, und es gibt keine
+Testphase, die irgendwann ausläuft.
 
-```bash
-npx wrangler kv namespace create RATE_LIMIT
+Wie viele Gespräche das sind, hängt vom Modell ab. Eingestellt ist
+`@cf/meta/llama-3.3-70b-instruct-fp8-fast` — das größte der frei nutzbaren
+Modelle, weil es deutlich besseres Deutsch schreibt als die kleinen. Dafür
+verbraucht es mehr pro Antwort. Für eine Agentur-Website mit normalem
+Besucheraufkommen reicht das Tageskontingent locker.
+
+**Wenn das Kontingent doch einmal aufgebraucht ist, passiert nichts Schlimmes:**
+Die Website merkt das und antwortet für den Rest des Tages automatisch aus ihrer
+eigenen Wissensbasis weiter. Der Besucher sieht keine Fehlermeldung, nur etwas
+knappere Antworten.
+
+Falls dir das zu oft passiert, tausch in `worker.js` in der Zeile
+
+```js
+const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 ```
 
-Der Befehl gibt eine `id` aus. Die in `wrangler.toml` eintragen und die drei
-auskommentierten Zeilen am Ende der Datei aktivieren (das `#` davor entfernen).
-Dann noch einmal `npm run deploy`.
+das Modell gegen `"@cf/meta/llama-3.1-8b-instruct-fast"` — deutlich sparsamer,
+dafür schwächeres Deutsch. Danach neu deployen.
+
+Wichtig: Solange du auf dem kostenlosen Cloudflare-Plan bleibst, **kann gar
+keine Rechnung entstehen.** Über das Kontingent hinaus wird nicht abgerechnet,
+sondern schlicht abgelehnt.
+
+---
+
+## Missbrauch begrenzen (optional)
+
+Ohne Begrenzung könnte jemand den Chat in einer Schleife ansprechen und dein
+Tageskontingent leerlaufen lassen. Über das Dashboard:
+
+- **Storage & Databases** → **KV** → **Create a namespace**, Name `RATE_LIMIT`
+- Zurück zum Worker → **Settings** → **Bindings** → **Add binding** → **KV namespace**
+- Variable name: `RATE_LIMIT`, den eben erstellten Namespace auswählen
+- Speichern und **Deploy**
 
 Danach sind pro Besucher 25 Fragen in 10 Minuten möglich — mehr als jeder echte
 Interessent braucht.
-
-Zusätzlich sinnvoll: im Anthropic-Dashboard unter *Billing* ein monatliches
-Ausgabenlimit setzen. Das ist die harte Obergrenze, egal was passiert.
 
 ---
 
 ## Etwas ändern
 
-**Was Lynn weiß** (Leistungen, Ablauf, Kontaktdaten, Tonfall) steht komplett in
-`src/prompt.ts`. Text anpassen, `npm run deploy` — fertig. Sonst muss nichts
-angefasst werden.
+**Was Lynn weiß** (Leistungen, Ablauf, Kontaktdaten, Tonfall) steht ganz oben in
+`worker.js` im Block `SYSTEM_PROMPT`. Text anpassen, neu deployen — fertig.
+Am restlichen Code musst du nie etwas ändern.
 
-**Fehler suchen:** `npm run tail` zeigt live mit, was der Worker tut.
-
----
-
-## Kosten
-
-Der Worker selbst ist im Gratis-Kontingent von Cloudflare. Bezahlt wird nur, was
-das Sprachmodell verbraucht.
-
-Eingestellt ist `claude-opus-5` — das leistungsfähigste Modell, damit die
-Antworten wirklich gut sind. Der wiederkehrende Teil (das Wissen über Lynq-x)
-wird zwischengespeichert und kostet ab der zweiten Anfrage nur noch einen
-Bruchteil.
-
-Wenn du später auf Kosten optimieren willst, ändere in `src/index.ts` die Zeile
-`model: "claude-opus-5"` auf `model: "claude-sonnet-5"` (günstiger, für einen
-FAQ-Chat immer noch mehr als ausreichend) und deploye neu. Das ist deine
-Entscheidung — ich habe bewusst nicht heruntergestuft.
+**Mitschauen, was passiert:** im Dashboard beim Worker der Reiter **Logs**
+(bzw. `npx wrangler tail` im Terminal).
 
 ---
 
 ## Datenschutz
 
-Sobald der Worker aktiv ist, verlassen Chat-Nachrichten den Browser. Die
-Datenschutzerklärung ist darauf bereits vorbereitet: Ziffer 6 in
-`datenschutz.html` beschreibt genau diese Verarbeitung inklusive Anthropic als
+Sobald der Worker aktiv ist, verlassen Chat-Nachrichten den Browser des
+Besuchers. Die Datenschutzerklärung ist darauf vorbereitet: Ziffer 6 in
+`datenschutz.html` beschreibt genau diese Verarbeitung mit Cloudflare als
 Auftragsverarbeiter.
 
-Zwei Dinge solltest du zusätzlich erledigen:
-
-1. Im Anthropic-Dashboard einen **Auftragsverarbeitungsvertrag (DPA)**
-   abschließen — Settings → Privacy / Data Processing.
-2. Die Rechtstexte einmal von einem Anwalt prüfen lassen. Ich bin keiner.
+Ein Punkt bleibt für dich: Bei Cloudflare im Dashboard unter
+**Manage Account → Configurations → Data Protection** (bzw. im Bereich Legal)
+den **Auftragsverarbeitungsvertrag (DPA)** akzeptieren. Und wie gesagt — die
+Rechtstexte einmal von einem Anwalt prüfen lassen. Ich bin keiner.

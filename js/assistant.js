@@ -1,4 +1,4 @@
-/* Lynn, der Assistent von Lynq-x.
+/* X, der Assistent von Lynq-x.
 
    Zwei Betriebsarten:
 
@@ -136,7 +136,7 @@
     {
       id: "wer",
       keys: ["wer bist du", "wer seid ihr", "über euch", "team", "agentur", "lynq", "was ist lynq", "arandjel", "regi", "wie viele seid", "mitarbeiter"],
-      answer: `Wir sind eine Webdesign- und Marketingagentur aus Köln, zu zweit und mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> macht Design und Umsetzung, <strong>Regi Amoako</strong> kümmert sich um Marketing und Strategie.<br><br>Lynq-x ist dabei das Einzelunternehmen von Arandjel Jovanovic. Bei uns laufen nicht dreißig Projekte parallel, deins bekommt entsprechend Aufmerksamkeit. ${link("#ueber-uns", "Mehr über uns")}`,
+      answer: `Wir sind eine Webdesign- und Marketingagentur aus Köln, zu zweit und mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> macht Design und Umsetzung, <strong>Regi Amoako</strong> kümmert sich um Marketing und Strategie.<br><br>Bei uns laufen nicht dreißig Projekte parallel, deins bekommt entsprechend Aufmerksamkeit. ${link("#ueber-uns", "Mehr über uns")}`,
       chips: ["Habt ihr Referenzen?", "Wie läuft ein Projekt ab?"]
     },
     {
@@ -144,9 +144,9 @@
       /* Doppelt gewichtet: "Wem gehört Lynq-x?" ist eine Frage nach dem
          Unternehmen, nicht nach dem Eigentum an der fertigen Website. */
       weight: 2,
-      keys: ["firma", "unternehmen heißt", "project x", "gewerbe", "rechnung", "vertragspartner", "steuernummer", "handelsregister", "wem gehört lynq", "impressum"],
-      answer: `Lynq-x ist unser Markenname. Das angemeldete Gewerbe dahinter heißt <strong>Project X Marketing Solution</strong>, Inhaber ist Arandjel Jovanovic.<br><br>Auf Rechnungen und in Verträgen steht deshalb Project X Marketing Solution. Alle Angaben stehen im <a href="impressum.html">Impressum</a>.`,
-      chips: ["Wer seid ihr?", "Wie erreiche ich euch?"]
+      keys: ["firma", "unternehmen heißt", "gewerbe", "rechnung", "vertragspartner", "steuernummer", "handelsregister", "wem gehört lynq", "impressum", "rechtsform", "gmbh", " ug", "einzelunternehmen", "eingetragen"],
+      answer: `Die vollständigen rechtlichen Angaben stehen im <a href="impressum.html">Impressum</a>.<br><br>Für dein Projekt spielt das ohnehin keine Rolle. Wichtig ist, was im Angebot steht und wer sich um deine Seite kümmert.`,
+      chips: ["Wer seid ihr?", "Was kostet das?"]
     },
     {
       id: "gastro",
@@ -237,13 +237,13 @@
   root.innerHTML = `
     <button class="assistant-launcher" type="button" id="asstLauncher" aria-expanded="false" aria-controls="asstPanel">
       <span class="assistant-launcher-orb" aria-hidden="true"></span>
-      <span class="assistant-launcher-label">Frag Lynn</span>
+      <span class="assistant-launcher-label">Frag X</span>
     </button>
-    <div class="assistant-panel" id="asstPanel" role="dialog" aria-modal="false" aria-label="Chat mit Lynn" hidden>
+    <div class="assistant-panel" id="asstPanel" role="dialog" aria-modal="false" aria-label="Chat mit X" hidden>
       <div class="assistant-head">
-        <span class="assistant-avatar" aria-hidden="true">L</span>
+        <span class="assistant-avatar" aria-hidden="true">X</span>
         <span class="assistant-ident">
-          <strong>Lynn</strong>
+          <strong>X</strong>
           <em>Assistent von Lynq-x</em>
         </span>
         <button class="assistant-close" type="button" id="asstClose" aria-label="Chat schließen">&times;</button>
@@ -430,7 +430,7 @@
   function start() {
     if (started) return;
     started = true;
-    addMessage("bot", `Hi, ich bin <strong>Lynn</strong>, der Assistent von Lynq-x.<br><br>Ich beantworte Fragen zu Preisen, Ablauf, Technik und Betreuung. Was willst du wissen?`);
+    addMessage("bot", `Hi, ich bin <strong>X</strong>, der Assistent von Lynq-x.<br><br>Ich beantworte Fragen zu Preisen, Ablauf, Technik und Betreuung. Was willst du wissen?`);
     setChips(START_CHIPS);
   }
 

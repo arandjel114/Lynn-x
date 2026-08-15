@@ -1,15 +1,15 @@
-# Lynn — der KI-Assistent von lynq-x.de
+# X, der KI-Assistent von lynq-x.de
 
 Dieser Ordner enthält den kleinen Server, der zwischen deiner Website und dem
 Sprachmodell sitzt. Er läuft **komplett kostenlos** auf deinem Cloudflare-Account.
 
 Kein API-Schlüssel, keine Kreditkarte, keine Rechnung: Cloudflare betreibt das
 Sprachmodell selbst (das nennt sich *Workers AI*) und stellt dir jeden Tag ein
-Gratis-Kontingent zur Verfügung. Dein Worker spricht das Modell direkt an —
-es ist gar kein zweiter Anbieter im Spiel, bei dem du etwas bezahlen müsstest.
+Gratis-Kontingent zur Verfügung. Dein Worker spricht das Modell direkt an.
+Es ist gar kein zweiter Anbieter im Spiel, bei dem du etwas bezahlen müsstest.
 
 Solange der Worker nicht eingerichtet ist, läuft der Assistent auf der Website
-weiter — dann eben mit den fest hinterlegten Antworten statt mit echter KI.
+weiter, dann eben mit den fest hinterlegten Antworten statt mit echter KI.
 Es geht also nichts kaputt, wenn du dir Zeit lässt.
 
 ---
@@ -35,7 +35,7 @@ Du brauchst nur deinen Cloudflare-Account. Kein Node.js, keine Installation.
 
 **3. Das Sprachmodell freischalten**
 
-Das ist der entscheidende Schritt — ohne ihn kennt der Worker kein Modell.
+Das ist der entscheidende Schritt. Ohne ihn kennt der Worker kein Modell.
 
 - Zurück zur Übersicht des Workers → Reiter **Settings** → **Bindings**
   (bei manchen Ansichten: **Variables and Secrets** → daneben **Bindings**)
@@ -64,7 +64,7 @@ Die brauchst du gleich.
 
 ## Weg B: Mit Terminal
 
-Falls du lieber im Terminal arbeitest — Node.js vorausgesetzt:
+Falls du lieber im Terminal arbeitest, Node.js vorausgesetzt:
 
 ```bash
 cd worker
@@ -103,7 +103,7 @@ zurückgesetzt werden. Eine Kreditkarte wird nicht verlangt, und es gibt keine
 Testphase, die irgendwann ausläuft.
 
 Wie viele Gespräche das sind, hängt vom Modell ab. Eingestellt ist
-`@cf/meta/llama-3.3-70b-instruct-fp8-fast` — das größte der frei nutzbaren
+`@cf/meta/llama-3.3-70b-instruct-fp8-fast`, das größte der frei nutzbaren
 Modelle, weil es deutlich besseres Deutsch schreibt als die kleinen. Dafür
 verbraucht es mehr pro Antwort. Für eine Agentur-Website mit normalem
 Besucheraufkommen reicht das Tageskontingent locker.
@@ -119,7 +119,7 @@ Falls dir das zu oft passiert, tausch in `worker.js` in der Zeile
 const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 ```
 
-das Modell gegen `"@cf/meta/llama-3.1-8b-instruct-fast"` — deutlich sparsamer,
+das Modell gegen `"@cf/meta/llama-3.1-8b-instruct-fast"`. Deutlich sparsamer,
 dafür schwächeres Deutsch. Danach neu deployen.
 
 Wichtig: Solange du auf dem kostenlosen Cloudflare-Plan bleibst, **kann gar
@@ -138,15 +138,15 @@ Tageskontingent leerlaufen lassen. Über das Dashboard:
 - Variable name: `RATE_LIMIT`, den eben erstellten Namespace auswählen
 - Speichern und **Deploy**
 
-Danach sind pro Besucher 25 Fragen in 10 Minuten möglich — mehr als jeder echte
+Danach sind pro Besucher 25 Fragen in 10 Minuten möglich, mehr als jeder echte
 Interessent braucht.
 
 ---
 
 ## Etwas ändern
 
-**Was Lynn weiß** (Leistungen, Ablauf, Kontaktdaten, Tonfall) steht ganz oben in
-`worker.js` im Block `SYSTEM_PROMPT`. Text anpassen, neu deployen — fertig.
+**Was X weiß** (Leistungen, Ablauf, Kontaktdaten, Tonfall) steht ganz oben in
+`worker.js` im Block `SYSTEM_PROMPT`. Text anpassen, neu deployen, fertig.
 Am restlichen Code musst du nie etwas ändern.
 
 **Mitschauen, was passiert:** im Dashboard beim Worker der Reiter **Logs**
@@ -163,5 +163,5 @@ Auftragsverarbeiter.
 
 Ein Punkt bleibt für dich: Bei Cloudflare im Dashboard unter
 **Manage Account → Configurations → Data Protection** (bzw. im Bereich Legal)
-den **Auftragsverarbeitungsvertrag (DPA)** akzeptieren. Und wie gesagt — die
+den **Auftragsverarbeitungsvertrag (DPA)** akzeptieren. Und wie gesagt: die
 Rechtstexte einmal von einem Anwalt prüfen lassen. Ich bin keiner.

@@ -1,4 +1,6 @@
-name = "lynq-x-assistant"
+# Muss genau so heissen wie der Worker im Dashboard, sonst legt ein Deploy
+# aus Git einen zweiten, leeren Worker an statt diesen zu aktualisieren.
+name = "flat-sun-939clynq-x-assistant"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
@@ -11,13 +13,11 @@ ALLOWED_ORIGINS = "https://lynq-x.de,https://www.lynq-x.de"
 
 # Speicher fuer Anfragen, Angebote und Sitzungen des internen Bereichs.
 # Ohne diesen Speicher laeuft der Chat weiter, aber admin.html bleibt leer.
-# Erst anlegen:
-#   npx wrangler kv namespace create ANFRAGEN
-# Dann die ausgegebene id hier eintragen.
-#
-# [[kv_namespaces]]
-# binding = "ANFRAGEN"
-# id = "HIER_DIE_ID_EINTRAGEN"
+# Die id gehoert hier fest hinein: bei einem Deploy aus Git ist diese Datei
+# massgeblich, und was hier fehlt, wird beim Worker entfernt.
+[[kv_namespaces]]
+binding = "ANFRAGEN"
+id = "a3b03b748c5e426c81833ab88c2f2958"
 
 # Optionale Begrenzung pro Besucher im Chat. Erst anlegen:
 #   npx wrangler kv namespace create RATE_LIMIT

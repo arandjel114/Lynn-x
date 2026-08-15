@@ -2355,3 +2355,12 @@ h1 .word:last-child {
 @media (max-width: 720px) {
   .work-grid { grid-template-columns: 1fr; }
 }
+
+/* Zuordnung von Marke zu Gewerbe, gehoert sichtbar in den Footer. */
+.footer-brandline {
+  margin: 6px 0 0;
+  font-size: .78rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+  opacity: .85;
+}

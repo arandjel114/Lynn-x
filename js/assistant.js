@@ -31,7 +31,7 @@
       /* Doppelt gewichtet: "Was kostet ein Bestellsystem?" ist eine Preisfrage,
          auch wenn das Fachwort darin länger ist als "kostet". */
       weight: 2,
-      keys: ["preis", "kost", "teuer", "günstig", "budget", "euro", "€", "was zahl", "honorar", "angebot", "rechnung", "rate"],
+      keys: ["preis", "kost", "teuer", "günstig", "budget", "euro", "€", "was zahl", "honorar", "angebot", "rate"],
       answer: `Feste Paketpreise gibt es bei uns bewusst nicht, weil jedes Projekt einen anderen Umfang hat. Eine schlanke Seite mit fünf Abschnitten liegt deutlich unter einem Shop mit Zahlungsanbindung.<br><br>So läuft es: kurzes Erstgespräch, danach ein schriftliches Festpreis-Angebot. Keine Überraschungen auf der Rechnung.`,
       chips: ["Wie lange dauert das?", "Wie läuft ein Projekt ab?"]
     },
@@ -136,8 +136,14 @@
     {
       id: "wer",
       keys: ["wer bist du", "wer seid ihr", "über euch", "team", "agentur", "lynq", "was ist lynq", "arandjel", "regi", "wie viele seid", "mitarbeiter"],
-      answer: `Wir sind eine Webdesign- und Marketingagentur aus Köln, zu zweit und mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> (Gründer) macht Design und Umsetzung, <strong>Regi Amoako</strong> (Partner) kümmert sich um Marketing und Strategie.<br><br>Wir sind ein junges Team und sagen das offen. Dafür laufen bei uns nicht dreißig Projekte parallel. ${link("#ueber-uns", "Mehr über uns")}`,
+      answer: `Wir sind eine Webdesign- und Marketingagentur aus Köln, zu zweit und mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> (Gründer) macht Design und Umsetzung, <strong>Regi Amoako</strong> (Partner) kümmert sich um Marketing und Strategie.<br><br>Bei uns laufen nicht dreißig Projekte parallel. Deins bekommt entsprechend Aufmerksamkeit. ${link("#ueber-uns", "Mehr über uns")}`,
       chips: ["Habt ihr Referenzen?", "Wie läuft ein Projekt ab?"]
+    },
+    {
+      id: "firma",
+      keys: ["firma", "unternehmen heißt", "project x", "gewerbe", "rechnung", "vertragspartner", "steuernummer", "handelsregister", "wem gehört lynq", "impressum"],
+      answer: `Lynq-x ist unser Markenname. Das angemeldete Gewerbe dahinter heißt <strong>Project X Marketing Solution</strong>, Inhaber ist Arandjel Jovanovic.<br><br>Auf Rechnungen und in Verträgen steht deshalb Project X Marketing Solution. Alle Angaben stehen im <a href="impressum.html">Impressum</a>.`,
+      chips: ["Wer seid ihr?", "Wie erreiche ich euch?"]
     },
     {
       id: "gastro",
@@ -147,8 +153,8 @@
     },
     {
       id: "beispiele",
-      keys: ["referenz", "beispiel", "portfolio", "arbeitsprobe", "gebaut", "kunden", "projekte gemacht", "zeigen", "ansehen", "muster"],
-      answer: `Auf der Seite findest du sechs Entwürfe: Zahnarztpraxis, Gastronomie, Werkstatt, Friseur, Kanzlei und Onlineshop. ${link("#beispiele", "Beispiele ansehen")}<br><br>Ehrlich gesagt: Das sind Gestaltungsentwürfe von uns, keine Kundenprojekte. Sie zeigen, wie wir arbeiten. Deine Seite entsteht sowieso komplett neu.`,
+      keys: ["referenz", "beispiel", "portfolio", "arbeitsprobe", "gebaut", "kunden", "projekte gemacht", "zeigen", "ansehen", "muster", "erfahrung", "seit wann", "wie lange gibt", "wie viele projekte", "schon mal gemacht"],
+      answer: `Schau dir am besten unsere Entwürfe an: Zahnarztpraxis, Gastronomie, Werkstatt, Friseur, Kanzlei und Onlineshop. ${link("#beispiele", "Beispiele ansehen")}<br><br>Damit du es gleich weißt: Das sind Gestaltungsentwürfe von uns und keine Kundenprojekte. Sie zeigen, wie wir arbeiten und was möglich ist. Deine Seite entsteht sowieso komplett neu.`,
       chips: ["Wie läuft ein Projekt ab?", "Was kostet das?"]
     },
     {

@@ -1,4 +1,4 @@
-/* Lynn — der Assistent von Lynq-x.
+/* Lynn, der Assistent von Lynq-x.
 
    Zwei Betriebsarten:
 
@@ -10,7 +10,7 @@
       hinterlegte Wissensbasis weiter unten. Der Chat funktioniert also immer,
       auch wenn der Server aus ist.
 
-   Gespeichert wird in beiden Fällen nichts — kein Cookie, kein Local Storage.
+   Gespeichert wird in beiden Fällen nichts: kein Cookie, kein Local Storage.
    Der Verlauf lebt nur im Arbeitsspeicher des Browsers. */
 (() => {
   "use strict";
@@ -32,13 +32,13 @@
          auch wenn das Fachwort darin länger ist als "kostet". */
       weight: 2,
       keys: ["preis", "kost", "teuer", "günstig", "budget", "euro", "€", "was zahl", "honorar", "angebot", "rechnung", "rate"],
-      answer: `Feste Paketpreise gibt es bei uns bewusst nicht — jedes Projekt hat einen anderen Umfang. Eine schlanke Seite mit fünf Abschnitten liegt deutlich unter einem Shop mit Zahlungsanbindung.<br><br>So läuft es: kurzes Erstgespräch, danach ein schriftliches Festpreis-Angebot. Keine Überraschungen auf der Rechnung.`,
+      answer: `Feste Paketpreise gibt es bei uns bewusst nicht, weil jedes Projekt einen anderen Umfang hat. Eine schlanke Seite mit fünf Abschnitten liegt deutlich unter einem Shop mit Zahlungsanbindung.<br><br>So läuft es: kurzes Erstgespräch, danach ein schriftliches Festpreis-Angebot. Keine Überraschungen auf der Rechnung.`,
       chips: ["Wie lange dauert das?", "Wie läuft ein Projekt ab?"]
     },
     {
       id: "dauer",
       keys: ["dauer", "lang", "zeit", "wann fertig", "schnell", "wochen", "termin bis", "deadline", "eilig"],
-      answer: `Die erste sichtbare Version steht meistens innerhalb von zwei Wochen. Wie schnell es danach live geht, hängt vor allem davon ab, wie zügig Texte, Bilder und Freigaben von dir kommen.<br><br>Den realistischen Zeitrahmen bekommst du schriftlich im Angebot — nicht als Schätzung im Nachhinein.`,
+      answer: `Die erste sichtbare Version steht meistens innerhalb von zwei Wochen. Wie schnell es danach live geht, hängt vor allem davon ab, wie zügig Texte, Bilder und Freigaben von dir kommen.<br><br>Den realistischen Zeitrahmen bekommst du schriftlich im Angebot, nicht als Schätzung im Nachhinein.`,
       chips: ["Was kostet das?", "Was brauchst du von mir?"]
     },
     {
@@ -49,10 +49,10 @@
     },
     {
       id: "leistungen",
-      /* Bewusst ohne allgemeine Frage-Floskeln wie "könnt ihr" — die stehen in
+      /* Bewusst ohne allgemeine Frage-Floskeln wie "könnt ihr". Die stehen in
          jeder zweiten Frage und würden speziellere Themen überstimmen. */
       keys: ["leistung", "was macht ihr", "was bietet ihr", "was bietet lynq", "angebot an", "services"],
-      answer: `Vier Bereiche: Webdesign &amp; Entwicklung, Conversion-Strategie, SEO &amp; Sichtbarkeit sowie Branding.<br><br>Alles davon einzeln oder als Gesamtpaket — je nachdem, was bei dir schon steht. ${link("#leistungen", "Leistungen ansehen")}`,
+      answer: `Vier Bereiche: Webdesign &amp; Entwicklung, Conversion-Strategie, SEO &amp; Sichtbarkeit sowie Branding.<br><br>Alles davon einzeln oder als Gesamtpaket, je nachdem, was bei dir schon steht. ${link("#leistungen", "Leistungen ansehen")}`,
       chips: ["Macht ihr auch SEO?", "Baut ihr Onlineshops?"]
     },
     {
@@ -64,25 +64,25 @@
     {
       id: "marketing",
       keys: ["marketing", "werbung", "ads", "google ads", "social", "instagram", "kampagne", "reichweite"],
-      answer: `Ja — aber nur, wenn die Seite dahinter trägt. Werbebudget auf eine Seite zu leiten, die nicht konvertiert, ist verbranntes Geld.<br><br>Deshalb schauen wir zuerst auf Struktur und Conversion, danach auf Kampagnen und Sichtbarkeit.`,
+      answer: `Ja, aber nur wenn die Seite dahinter trägt. Werbebudget auf eine Seite zu leiten, die nicht konvertiert, ist verbranntes Geld.<br><br>Deshalb schauen wir zuerst auf Struktur und Conversion, danach auf Kampagnen und Sichtbarkeit.`,
       chips: ["Macht ihr auch SEO?", "Projekt anfragen"]
     },
     {
       id: "shop",
       keys: ["shop", "onlineshop", "verkauf", "e-commerce", "ecommerce", "bezahl", "zahlung", "warenkorb", "produkte verkauf"],
-      answer: `Ja, Onlineshops mit Zahlungsanbindung sind möglich. Das ist der aufwendigste Projekttyp — dafür brauchen wir im Erstgespräch ein paar Details mehr: Produktanzahl, Versand, Zahlungsarten.`,
+      answer: `Ja, Onlineshops mit Zahlungsanbindung sind möglich. Das ist der aufwendigste Projekttyp. Dafür brauchen wir im Erstgespräch ein paar Details mehr: Produktanzahl, Versand, Zahlungsarten.`,
       chips: ["Was kostet das?", "Projekt anfragen"]
     },
     {
       id: "privat",
       keys: ["privat", "privatperson", "einzelperson", "kleines", "verein", "selbstständ", "freiberuf", "start-up", "startup", "gründ"],
-      answer: `Ja, ausdrücklich. Unternehmen, Vereine, Selbstständige und Privatpersonen — der Ablauf ist derselbe. Der Umfang wird an dein Vorhaben angepasst, nicht an eine Firmengröße.`,
+      answer: `Ja, ausdrücklich. Bei Unternehmen, Vereinen, Selbstständigen und Privatpersonen ist der Ablauf derselbe. Der Umfang wird an dein Vorhaben angepasst, nicht an eine Firmengröße.`,
       chips: ["Was kostet das?", "Wie läuft ein Projekt ab?"]
     },
     {
       id: "pflege",
       keys: ["pflege", "selbst ändern", "bearbeiten", "aktualis", "update", "wartung", "betreuung", "ändern lassen", "inhalte ändern"],
-      answer: `Beides geht. Du bekommst Zugriff und eine kurze Einweisung, wenn du selbst pflegen willst. Wenn dir das zu viel ist, übernehmen wir die laufende Pflege im Rahmen der Betreuung.<br><br>Du bist in keinem Fall an uns gebunden — die Seite gehört dir.`,
+      answer: `Beides geht. Du bekommst Zugriff und eine kurze Einweisung, wenn du selbst pflegen willst. Wenn dir das zu viel ist, übernehmen wir die laufende Pflege im Rahmen der Betreuung.<br><br>Du bist in keinem Fall an uns gebunden. Die Seite gehört dir.`,
       chips: ["Wem gehört die Website?", "Was kostet das?"]
     },
     {
@@ -94,19 +94,19 @@
     {
       id: "hosting",
       keys: ["hosting", "hoster", "server", "domain", "webspace", "wo liegt", "strato", "ionos", "e-mail adresse"],
-      answer: `Auf Wunsch kümmern wir uns um Domain und Hosting inklusive SSL und E-Mail-Adressen. Wenn du schon einen Anbieter hast, arbeiten wir mit dem weiter — ein Umzug ist kein Muss.`,
+      answer: `Auf Wunsch kümmern wir uns um Domain und Hosting inklusive SSL und E-Mail-Adressen. Wenn du schon einen Anbieter hast, arbeiten wir mit dem weiter. Ein Umzug ist kein Muss.`,
       chips: ["Wem gehört die Website?", "Projekt anfragen"]
     },
     {
       id: "technik",
       keys: ["wordpress", "baukasten", "wix", "template", "vorlage", "welche technik", "programmiert", "cms", "framework"],
-      answer: `Handprogrammiert — HTML, CSS und JavaScript, kein Baukasten und keine gekaufte Vorlage. Das ist der Grund, warum die Seiten schnell laden und sich nicht wie tausend andere anfühlen.<br><br>Wenn du ein CMS zum Selbstpflegen brauchst, binden wir eines ein, das zu deinem Projekt passt.`,
+      answer: `Handprogrammiert in HTML, CSS und JavaScript. Kein Baukasten, keine gekaufte Vorlage. Das ist der Grund, warum die Seiten schnell laden und sich nicht wie tausend andere anfühlen.<br><br>Wenn du ein CMS zum Selbstpflegen brauchst, binden wir eines ein, das zu deinem Projekt passt.`,
       chips: ["Kann ich selbst pflegen?", "Ist die Seite mobil optimiert?"]
     },
     {
       id: "mobil",
       keys: ["mobil", "handy", "smartphone", "responsive", "tablet", "auf dem telefon"],
-      answer: `Selbstverständlich. Mobil wird zuerst gedacht, nicht am Ende nachgerüstet — bei den meisten Kunden kommt über die Hälfte der Besucher vom Handy.`,
+      answer: `Selbstverständlich. Mobil wird zuerst gedacht und nicht am Ende nachgerüstet. Bei den meisten Kunden kommt über die Hälfte der Besucher vom Handy.`,
       chips: ["Wie schnell lädt die Seite?", "Projekt anfragen"]
     },
     {
@@ -118,7 +118,7 @@
     {
       id: "material",
       keys: ["brauchst du von mir", "was muss ich", "texte", "bilder", "fotos", "logo", "material", "vorbereiten", "liefern"],
-      answer: `Am Anfang reicht: Was machst du, für wen, und was soll die Seite bewirken. Texte und Bilder können später kommen — bei Bedarf schreiben wir die Texte mit dir zusammen.<br><br>Ein Logo ist schön, aber keine Voraussetzung. Branding gehört mit zu unseren Leistungen.`,
+      answer: `Am Anfang reicht: Was machst du, für wen, und was soll die Seite bewirken. Texte und Bilder können später kommen. Wenn du willst, schreiben wir sie mit dir zusammen.<br><br>Ein Logo ist schön, aber keine Voraussetzung. Branding gehört mit zu unseren Leistungen.`,
       chips: ["Wie läuft ein Projekt ab?", "Projekt anfragen"]
     },
     {
@@ -136,43 +136,43 @@
     {
       id: "wer",
       keys: ["wer bist du", "wer seid ihr", "über euch", "team", "agentur", "lynq", "was ist lynq", "arandjel", "regi", "wie viele seid", "mitarbeiter"],
-      answer: `Lynq-x ist eine Webdesign- und Marketingagentur aus Köln — zwei Leute mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> (Gründer) macht Design und Umsetzung, <strong>Regi Amoako</strong> (Partner) kümmert sich um Marketing und Strategie.<br><br>Wir sind ein junges Team, und das sagen wir offen. Der Vorteil: es laufen nicht dreißig Projekte parallel. ${link("#ueber-uns", "Mehr über uns")}`,
+      answer: `Wir sind eine Webdesign- und Marketingagentur aus Köln, zu zweit und mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> (Gründer) macht Design und Umsetzung, <strong>Regi Amoako</strong> (Partner) kümmert sich um Marketing und Strategie.<br><br>Wir sind ein junges Team und sagen das offen. Dafür laufen bei uns nicht dreißig Projekte parallel. ${link("#ueber-uns", "Mehr über uns")}`,
       chips: ["Habt ihr Referenzen?", "Wie läuft ein Projekt ab?"]
     },
     {
       id: "gastro",
       keys: ["gastro", "restaurant", "imbiss", "bestellsystem", "bestellungen", "speisekarte", "lieferdienst", "lieferando", "essen bestellen", "gastronomie", "provision", "café", "cafe", "pizzeria", "döner", "doener"],
-      answer: `Ja — und für Gastro haben wir etwas Eigenes: ein <strong>Bestellsystem direkt in deiner Website</strong>. Deine Gäste bestellen bei dir statt über eine Plattform.<br><br>Keine Provision pro Bestellung, keine zusätzlichen Geräte, keine laufenden Gebühren an einen Drittanbieter. ${link("#gastro", "Details zum Bestellsystem")}`,
+      answer: `Ja. Für Gastro haben wir sogar etwas Eigenes: ein <strong>Bestellsystem direkt in deiner Website</strong>. Deine Gäste bestellen dann bei dir statt über eine Plattform.<br><br>Keine Provision pro Bestellung, keine zusätzlichen Geräte, keine laufenden Gebühren an einen Drittanbieter. ${link("#gastro", "Details zum Bestellsystem")}`,
       chips: ["Was kostet das?", "Projekt anfragen"]
     },
     {
       id: "beispiele",
       keys: ["referenz", "beispiel", "portfolio", "arbeitsprobe", "gebaut", "kunden", "projekte gemacht", "zeigen", "ansehen", "muster"],
-      answer: `Auf der Seite findest du sechs Entwürfe — Zahnarztpraxis, Gastronomie, Werkstatt, Friseur, Kanzlei und Onlineshop. ${link("#beispiele", "Beispiele ansehen")}<br><br>Ehrlich gesagt: Das sind Gestaltungsentwürfe von uns, keine Kundenprojekte. Sie zeigen, wie wir arbeiten — deine Seite entsteht ohnehin komplett neu.`,
+      answer: `Auf der Seite findest du sechs Entwürfe: Zahnarztpraxis, Gastronomie, Werkstatt, Friseur, Kanzlei und Onlineshop. ${link("#beispiele", "Beispiele ansehen")}<br><br>Ehrlich gesagt: Das sind Gestaltungsentwürfe von uns, keine Kundenprojekte. Sie zeigen, wie wir arbeiten. Deine Seite entsteht sowieso komplett neu.`,
       chips: ["Wie läuft ein Projekt ab?", "Was kostet das?"]
     },
     {
       id: "datenschutz",
       keys: ["datenschutz", "dsgvo", "cookie", "tracking", "daten", "speicher", "impressum", "rechtlich"],
-      answer: `Diese Seite setzt keine Cookies, bindet kein Tracking ein und lädt nichts von fremden Servern nach — deshalb gibt es hier auch kein Cookie-Banner.<br><br>Was mit deinen Chat-Nachrichten passiert, steht in der <a href="datenschutz.html">Datenschutzerklärung</a> unter Ziffer 6. Gespeichert wird der Verlauf in keinem Fall. Auch das <a href="impressum.html">Impressum</a> findest du dort.`,
+      answer: `Diese Seite setzt keine Cookies, bindet kein Tracking ein und lädt nichts von fremden Servern nach. Deshalb gibt es hier auch kein Cookie-Banner.<br><br>Was mit deinen Chat-Nachrichten passiert, steht in der <a href="datenschutz.html">Datenschutzerklärung</a> unter Ziffer 6. Gespeichert wird der Verlauf in keinem Fall. Auch das <a href="impressum.html">Impressum</a> findest du dort.`,
       chips: ["Wer seid ihr?", "Wie erreiche ich euch?"]
     },
     {
       id: "bot",
       keys: ["bist du ein bot", "bist du echt", "künstliche intelligenz", "ki", "roboter", "mensch"],
-      answer: `Ich bin ein Assistent, kein Mensch — und ich erfinde nichts. Ich gebe nur Auskunft über Dinge, die auf dieser Seite stehen.<br><br>Sobald es um dein konkretes Projekt geht, ist ein echtes Gespräch besser: ${link("#kontakt", "Projekt anfragen")}.`,
+      answer: `Ich bin ein Assistent und kein Mensch. Erfinden tue ich nichts. Ich gebe nur Auskunft über Dinge, die auf dieser Seite stehen.<br><br>Sobald es um dein konkretes Projekt geht, ist ein echtes Gespräch besser: ${link("#kontakt", "Projekt anfragen")}.`,
       chips: ["Was kostet das?", "Wie erreiche ich euch?"]
     },
     {
       id: "gruss",
       keys: ["hallo", "hi ", "hey", "guten tag", "moin", "servus", "guten morgen", "guten abend"],
-      answer: `Hallo! Frag einfach los — Preise, Ablauf, Technik oder was du sonst wissen willst.`,
+      answer: `Hallo! Frag einfach los. Preise, Ablauf, Technik oder was du sonst wissen willst.`,
       chips: ["Was kostet eine Website?", "Wie läuft ein Projekt ab?"]
     },
     {
       id: "danke",
       keys: ["danke", "dankeschön", "top", "super", "perfekt", "alles klar", "tschüss", "ciao"],
-      answer: `Gern. Wenn du loslegen willst: ${link("#kontakt", "Projekt anfragen")} — oder schreib direkt an <a href="mailto:${MAIL}">${MAIL}</a>.`,
+      answer: `Gern. Wenn du loslegen willst: ${link("#kontakt", "Projekt anfragen")}, oder schreib direkt an <a href="mailto:${MAIL}">${MAIL}</a>.`,
       chips: []
     }
   ];
@@ -217,7 +217,7 @@
   }
 
   const FALLBACK = {
-    answer: `Dazu finde ich hier nichts Belastbares — und raten hilft dir nicht weiter.<br><br>Schreib die Frage am besten direkt an <a href="mailto:${MAIL}">${MAIL}</a>, dann bekommst du eine richtige Antwort.`,
+    answer: `Dazu finde ich hier nichts Belastbares, und raten hilft dir nicht weiter.<br><br>Schreib die Frage am besten direkt an <a href="mailto:${MAIL}">${MAIL}</a>, dann bekommst du eine richtige Antwort.`,
     chips: ["Was kostet eine Website?", "Wie läuft ein Projekt ab?", "Wie erreiche ich euch?"]
   };
 
@@ -298,7 +298,7 @@
     s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
 
   /* Der Bot liefert reinen Text. Aus E-Mail-Adressen und Telefonnummern
-     machen wir hier klickbare Links — sonst wird nichts interpretiert. */
+     machen wir hier klickbare Links. Sonst wird nichts interpretiert. */
   function renderText(text) {
     return escapeHtml(text)
       .replace(/([\w.+-]+@[\w-]+\.[\w.]+)/g, '<a href="mailto:$1">$1</a>')
@@ -316,7 +316,7 @@
     form.querySelector("button").disabled = state;
   }
 
-  /* Antwort aus der lokalen Wissensbasis — Rückfallebene und Betrieb ohne Server. */
+  /* Antwort aus der lokalen Wissensbasis: Rückfallebene und Betrieb ohne Server. */
   function answerLocally(question) {
     const pending = typing();
     const entry = findAnswer(question) || FALLBACK;
@@ -421,7 +421,7 @@
   function start() {
     if (started) return;
     started = true;
-    addMessage("bot", `Hi, ich bin <strong>Lynn</strong> — der Assistent von Lynq-x.<br><br>Ich beantworte Fragen zu Preisen, Ablauf, Technik und Betreuung. Was willst du wissen?`);
+    addMessage("bot", `Hi, ich bin <strong>Lynn</strong>, der Assistent von Lynq-x.<br><br>Ich beantworte Fragen zu Preisen, Ablauf, Technik und Betreuung. Was willst du wissen?`);
     setChips(START_CHIPS);
   }
 

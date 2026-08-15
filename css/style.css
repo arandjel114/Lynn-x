@@ -1771,7 +1771,7 @@ h1 .word:last-child {
 }
 
 /* ============================================================
-   Lynn — Assistent
+   Lynn: Assistent
    ============================================================ */
 .visually-hidden {
   position: absolute;
@@ -2124,7 +2124,7 @@ h1 .word:last-child {
 .assistant-form button:disabled:hover { transform: none; }
 
 /* ============================================================
-   Team — wer hinter Lynq-x steht
+   Team: wer hinter Lynq-x steht
    ============================================================ */
 .team {
   display: grid;
@@ -2299,7 +2299,7 @@ h1 .word:last-child {
 }
 
 /* ============================================================
-   Gastronomie — eigenes Bestellsystem
+   Gastronomie: eigenes Bestellsystem
    ============================================================ */
 .gastro-lead {
   max-width: 60ch;
@@ -2308,7 +2308,7 @@ h1 .word:last-child {
   line-height: 1.78;
   color: var(--text-dim);
 }
-/* Zwei mal zwei statt drei plus einer — sonst steht der vierte Punkt allein. */
+/* Zwei mal zwei statt drei plus einer, sonst steht der vierte Punkt allein. */
 .gastro-inner { max-width: 940px; }
 .gastro-points {
   display: grid;
@@ -2319,7 +2319,7 @@ h1 .word:last-child {
 @media (max-width: 640px) {
   .gastro-points { grid-template-columns: 1fr; }
 }
-/* Kein Kasten — jeder Punkt hängt an einer goldenen Haarlinie. */
+/* Kein Kasten: jeder Punkt hängt an einer goldenen Haarlinie. */
 .gastro-point {
   position: relative;
   padding-left: 20px;

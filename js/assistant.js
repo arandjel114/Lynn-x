@@ -28,6 +28,9 @@
   const KNOWLEDGE = [
     {
       id: "preis",
+      /* Doppelt gewichtet: "Was kostet ein Bestellsystem?" ist eine Preisfrage,
+         auch wenn das Fachwort darin länger ist als "kostet". */
+      weight: 2,
       keys: ["preis", "kost", "teuer", "günstig", "budget", "euro", "€", "was zahl", "honorar", "angebot", "rechnung", "rate"],
       answer: `Feste Paketpreise gibt es bei uns bewusst nicht — jedes Projekt hat einen anderen Umfang. Eine schlanke Seite mit fünf Abschnitten liegt deutlich unter einem Shop mit Zahlungsanbindung.<br><br>So läuft es: kurzes Erstgespräch, danach ein schriftliches Festpreis-Angebot. Keine Überraschungen auf der Rechnung.`,
       chips: ["Wie lange dauert das?", "Wie läuft ein Projekt ab?"]
@@ -132,9 +135,21 @@
     },
     {
       id: "wer",
-      keys: ["wer bist du", "wer seid ihr", "über euch", "team", "agentur", "lynq", "was ist lynq"],
-      answer: `Lynq-x ist eine Webdesign- und Marketingagentur aus Köln, geführt von Arandjel Jovanovic. Kleine Struktur, direkte Ansprache — du redest mit der Person, die auch baut.<br><br>Ich bin Lynn, der Assistent auf dieser Seite. Ich beantworte die häufigsten Fragen; alles Konkrete klärt Arandjel persönlich.`,
-      chips: ["Wie läuft ein Projekt ab?", "Wie erreiche ich euch?"]
+      keys: ["wer bist du", "wer seid ihr", "über euch", "team", "agentur", "lynq", "was ist lynq", "arandjel", "regi", "wie viele seid", "mitarbeiter"],
+      answer: `Lynq-x ist eine Webdesign- und Marketingagentur aus Köln — zwei Leute mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> (Gründer) macht Design und Umsetzung, <strong>Regi Amoako</strong> (Partner) kümmert sich um Marketing und Strategie.<br><br>Wir sind ein junges Team, und das sagen wir offen. Der Vorteil: es laufen nicht dreißig Projekte parallel. ${link("#ueber-uns", "Mehr über uns")}`,
+      chips: ["Habt ihr Referenzen?", "Wie läuft ein Projekt ab?"]
+    },
+    {
+      id: "gastro",
+      keys: ["gastro", "restaurant", "imbiss", "bestellsystem", "bestellungen", "speisekarte", "lieferdienst", "lieferando", "essen bestellen", "gastronomie", "provision", "café", "cafe", "pizzeria", "döner", "doener"],
+      answer: `Ja — und für Gastro haben wir etwas Eigenes: ein <strong>Bestellsystem direkt in deiner Website</strong>. Deine Gäste bestellen bei dir statt über eine Plattform.<br><br>Keine Provision pro Bestellung, keine zusätzlichen Geräte, keine laufenden Gebühren an einen Drittanbieter. ${link("#gastro", "Details zum Bestellsystem")}`,
+      chips: ["Was kostet das?", "Projekt anfragen"]
+    },
+    {
+      id: "beispiele",
+      keys: ["referenz", "beispiel", "portfolio", "arbeitsprobe", "gebaut", "kunden", "projekte gemacht", "zeigen", "ansehen", "muster"],
+      answer: `Auf der Seite findest du sechs Entwürfe — Zahnarztpraxis, Gastronomie, Werkstatt, Friseur, Kanzlei und Onlineshop. ${link("#beispiele", "Beispiele ansehen")}<br><br>Ehrlich gesagt: Das sind Gestaltungsentwürfe von uns, keine Kundenprojekte. Sie zeigen, wie wir arbeiten — deine Seite entsteht ohnehin komplett neu.`,
+      chips: ["Wie läuft ein Projekt ab?", "Was kostet das?"]
     },
     {
       id: "datenschutz",
@@ -194,7 +209,7 @@
       let score = 0;
       for (const key of entry.keys) {
         const k = normKey(key).trim();
-        if (matcher(key).test(text)) score += k.length >= 6 ? 3 : 2;
+        if (matcher(key).test(text)) score += (k.length >= 6 ? 3 : 2) * (entry.weight || 1);
       }
       if (score > bestScore) { bestScore = score; best = entry; }
     }

@@ -4,6 +4,11 @@ name = "flat-sun-939clynq-x-assistant"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
+# Muss ausdruecklich dastehen. Ohne diese Zeile kann ein Deploy aus Git die
+# workers.dev-Adresse abschalten, und dann antwortet der Worker nicht mehr,
+# obwohl der Build durchgelaufen ist.
+workers_dev = true
+
 # Das Sprachmodell laeuft bei Cloudflare selbst — kein API-Schluessel noetig.
 [ai]
 binding = "AI"

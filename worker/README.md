@@ -79,19 +79,22 @@ also nichts weiter zu konfigurieren.
 
 ## Zum Schluss: Website verbinden
 
-In `js/assistant.js` (im Hauptordner, nicht hier) steht in Zeile 20:
+In `js/config.js` (im Hauptordner, nicht hier) steht eine einzige Zeile:
 
 ```js
-const API_ENDPOINT = "";
+window.LYNQX_API = "";
 ```
 
 Dort die Worker-URL eintragen:
 
 ```js
-const API_ENDPOINT = "https://lynq-x-assistant.DEIN-NAME.workers.dev";
+window.LYNQX_API = "https://lynq-x-assistant.DEIN-NAME.workers.dev";
 ```
 
-Speichern, committen, pushen. Ab dann läuft der Assistent mit echter KI.
+Speichern, committen, pushen. Ab dann läuft der Assistent mit echter KI, das
+Kontaktformular schickt seine Anfragen an den Worker statt ins Mailprogramm,
+und der interne Bereich hat etwas zu zeigen. Diese eine Zeile versorgt alle
+drei Dinge, an anderer Stelle musst du nichts eintragen.
 
 ---
 
@@ -140,6 +143,57 @@ Tageskontingent leerlaufen lassen. Über das Dashboard:
 
 Danach sind pro Besucher 25 Fragen in 10 Minuten möglich, mehr als jeder echte
 Interessent braucht.
+
+---
+
+## Der interne Bereich (admin.html)
+
+Die Seite `admin.html` ist deine Übersicht: alle Anfragen aus dem Formular,
+Angebote direkt am Auftrag, Status und die Einnahmen. Sie ist von nirgendwo
+verlinkt, steht in `robots.txt` auf Disallow und trägt ein `noindex`. Du
+erreichst sie nur, wenn du `lynq-x.de/admin.html` direkt eintippst.
+
+Damit sie funktioniert, braucht der Worker einen Speicher. Ohne ihn nimmt er
+keine Anfragen an und die Seite bleibt leer.
+
+**1. Speicher anlegen**
+
+- Im Dashboard: **Storage & Databases** → **KV** → **Create a namespace**
+- Name: `ANFRAGEN`
+
+**2. Speicher an den Worker hängen**
+
+- Zurück zum Worker → **Settings** → **Bindings** → **Add binding**
+- Typ **KV namespace**, Variable name exakt `ANFRAGEN`, den eben erstellten
+  Namespace auswählen
+- Speichern und **Deploy**
+
+**3. Passwort setzen (empfohlen)**
+
+Im Code steht ein Standardpasswort. Das steht damit auch öffentlich auf
+GitHub. Sobald du eines per Bindung setzt, gilt nur noch dieses:
+
+- **Settings** → **Bindings** → **Add binding** → **Secret**
+- Name: `ADMIN_PASSWORT`, Wert: dein Passwort
+- Speichern und **Deploy**
+
+Das ist die ganze Änderung. Am Code musst du dafür nichts anfassen.
+
+**Wie der Zugang abgesichert ist**
+
+Auf `admin.html` selbst liegen keine Daten, die Seite ist eine leere Hülle.
+Anfragen und Beträge liegen im Worker und werden erst geschickt, nachdem das
+Passwort dort geprüft wurde. Wer den Quelltext ansieht, findet nichts.
+Nach fünf Fehlversuchen ist die IP für 15 Minuten gesperrt, Durchprobieren
+läuft also ins Leere. Die Anmeldung gilt 12 Stunden und endet, wenn du den
+Tab schließt.
+
+**Was du dort tun kannst**
+
+Anfrage aufklappen, Betrag und Leistungen eintragen, speichern. Über
+*Angebotstext kopieren* bekommst du einen fertigen Text für die Mail. Den
+Status ziehst du von *Neu* über *Angebot raus* bis *Bezahlt*; sobald etwas auf
+*Bezahlt* steht, taucht es in den Einnahmen und in der Monatsübersicht auf.
 
 ---
 

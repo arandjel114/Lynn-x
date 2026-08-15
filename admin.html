@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anfragen | Lynq-x</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+<link rel="stylesheet" href="css/style.css?v=26">
+</head>
+<body class="legal-page admin-page">
+
+<div class="grain" aria-hidden="true"></div>
+<div class="bg-fx" aria-hidden="true">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+</div>
+
+<header class="site-header is-scrolled">
+  <div class="container header-inner">
+    <a href="index.html" class="logo" aria-label="Lynq-x Startseite">
+      <span class="logo-img-wrap"><img src="assets/logo-header-sm.png" alt="Lynq-x" class="logo-img logo-img-header"></span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Zur Website</a>
+      <button type="button" class="admin-logout" id="logoutBtn" hidden>Abmelden</button>
+    </nav>
+  </div>
+</header>
+
+<main class="admin">
+  <div class="container">
+
+    <!-- Anmeldung -->
+    <section class="admin-login" id="loginView">
+      <p class="eyebrow">Interner Bereich</p>
+      <h1 class="legal-title">Anfragen und Angebote</h1>
+      <form class="admin-login-form" id="loginForm">
+        <div class="form-row">
+          <label for="passwort">Passwort</label>
+          <input type="password" id="passwort" name="passwort" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="cta cta-quiz">
+          <span class="cta-label">Anmelden</span>
+          <span class="cta-orb" aria-hidden="true"><span class="cta-orb-arrow">&rarr;</span></span>
+        </button>
+        <p class="form-note" id="loginNote" role="status"></p>
+      </form>
+    </section>
+
+    <!-- Arbeitsbereich -->
+    <section class="admin-board" id="boardView" hidden>
+      <p class="eyebrow">Interner Bereich</p>
+      <h1 class="legal-title">Anfragen und Angebote</h1>
+
+      <div class="admin-stats" id="stats"></div>
+
+      <div class="admin-toolbar">
+        <div class="admin-filter" id="filter" role="group" aria-label="Nach Status filtern"></div>
+        <button type="button" class="admin-refresh" id="refreshBtn">Aktualisieren</button>
+      </div>
+
+      <div class="admin-list" id="list"></div>
+
+      <section class="admin-month">
+        <h2 class="admin-h2">Einnahmen nach Monat</h2>
+        <div id="months"></div>
+      </section>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-bottom">
+    <p>&copy; <span id="year"></span> Lynq-x</p>
+  </div>
+</footer>
+
+<script src="js/config.js?v=26"></script>
+<script src="js/admin.js?v=26"></script>
+</body>
+</html>

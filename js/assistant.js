@@ -15,9 +15,8 @@
 (() => {
   "use strict";
 
-  /* Nach dem Deploy des Workers hier dessen URL eintragen, z. B.
-     "https://lynq-x-assistant.dein-name.workers.dev". Siehe worker/README.md. */
-  const API_ENDPOINT = "";
+  /* Die Worker-Adresse steht zentral in js/config.js. */
+  const API_ENDPOINT = (window.LYNQX_API || "").replace(/\/+$/, "");
 
   const MAIL = "kontakt-lynq-x@outlook.de";
   const HOME = document.body.classList.contains("legal-page") ? "index.html" : "";

@@ -2592,3 +2592,294 @@ h1 .word:last-child {
   background: rgba(198, 154, 44, .12);
   color: var(--text);
 }
+
+/* ============================================================
+   Interner Bereich
+   ============================================================ */
+.admin { padding: 130px 0 90px; position: relative; z-index: 1; }
+.admin-h2 {
+  margin: 0 0 18px;
+  font-family: var(--font-display, inherit);
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  font-weight: 700;
+  color: var(--text);
+}
+.admin-h3 {
+  margin: 0 0 14px;
+  font-size: .78rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--gold-ink);
+}
+.admin-leer {
+  padding: 26px 2px;
+  color: var(--text-dim);
+  font-size: .92rem;
+}
+.admin-logout {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: .9rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color .3s var(--ease);
+}
+.admin-logout:hover { color: var(--gold-ink); }
+
+.admin-login { max-width: 420px; }
+.admin-login-form { margin-top: 34px; display: grid; gap: 22px; justify-items: start; }
+.admin-login-form .form-row { width: 100%; }
+
+/* Kennzahlen */
+/* Sechs Kacheln, deshalb feste Spaltenzahlen: sonst bleibt eine allein
+   in der zweiten Reihe stehen. */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(20px, 3vw, 36px);
+  margin: clamp(34px, 5vw, 52px) 0;
+  padding-bottom: clamp(28px, 4vw, 40px);
+  border-bottom: 1px solid var(--border-soft);
+}
+@media (min-width: 1000px) { .admin-stats { grid-template-columns: repeat(6, 1fr); } }
+@media (max-width: 560px) { .admin-stats { grid-template-columns: repeat(2, 1fr); } }
+.admin-stat { display: flex; flex-direction: column; gap: 5px; }
+.admin-stat-label {
+  font-size: .7rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.admin-stat-wert {
+  font-family: var(--font-display, inherit);
+  font-size: clamp(1.5rem, 3vw, 2.05rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--gold-dim);
+}
+.admin-stat-neben { font-size: .8rem; color: var(--text-dim); }
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.admin-filter { display: flex; flex-wrap: wrap; gap: 7px; }
+.admin-chip {
+  padding: 7px 13px;
+  border: 1px solid var(--border-soft);
+  border-radius: 40px;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: .8rem;
+  cursor: pointer;
+  transition: border-color .3s var(--ease), color .3s var(--ease), background .3s var(--ease);
+}
+.admin-chip span { opacity: .6; margin-left: 3px; }
+.admin-chip:hover { border-color: var(--gold); color: var(--text); }
+.admin-chip.is-active {
+  border-color: var(--gold);
+  background: rgba(198, 154, 44, .14);
+  color: var(--text);
+}
+.admin-refresh {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: .84rem;
+  color: var(--gold-ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Liste: Zeilen auf Haarlinien, kein Kasten */
+.admin-item { border-bottom: 1px solid var(--border-soft); }
+.admin-item-head {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1.1fr) minmax(0, 1.4fr) 120px 90px;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 2px;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: padding-left .35s var(--ease);
+}
+.admin-item-head:hover { padding-left: 8px; }
+.admin-item-datum { font-size: .82rem; color: var(--text-dim); }
+.admin-item-name { font-weight: 600; color: var(--text); }
+.admin-item-projekt { font-size: .9rem; color: var(--text-dim); }
+.admin-item-betrag { font-size: .9rem; color: var(--gold-ink); text-align: right; }
+
+.admin-badge {
+  justify-self: start;
+  padding: 4px 11px;
+  border-radius: 40px;
+  font-size: .72rem;
+  letter-spacing: .04em;
+  border: 1px solid var(--border-soft);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.admin-badge-neu { border-color: var(--gold); color: var(--gold-ink); background: rgba(198,154,44,.14); }
+.admin-badge-angenommen,
+.admin-badge-bezahlt { border-color: #7d9a5e; color: #4f6b33; background: rgba(125,154,94,.16); }
+.admin-badge-abgelehnt { opacity: .6; }
+
+.admin-item-body {
+  padding: 6px 2px 28px;
+  animation: quizIn .4s var(--ease) both;
+}
+.admin-felder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px 26px;
+  margin-bottom: 20px;
+}
+.admin-feld { display: flex; flex-direction: column; gap: 3px; }
+.admin-feld span {
+  font-size: .68rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.admin-feld strong { font-size: .93rem; font-weight: 500; color: var(--text); }
+.admin-nachricht {
+  margin: 0 0 22px;
+  padding-left: 14px;
+  border-left: 1px solid var(--gold-light);
+  font-size: .93rem;
+  line-height: 1.7;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+}
+
+.admin-aktionen {
+  display: flex;
+  align-items: end;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.admin-select { display: flex; flex-direction: column; gap: 6px; }
+.admin-select span {
+  font-size: .68rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.admin-select select {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 7px 2px;
+  color: var(--text);
+  font: inherit;
+  font-size: .93rem;
+}
+.admin-select select:focus { outline: none; border-bottom-color: var(--gold); }
+.admin-mail {
+  font-size: .88rem;
+  color: var(--gold-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.admin-loeschen {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: .82rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color .3s var(--ease);
+}
+.admin-loeschen:hover { color: #a04a3a; }
+
+.admin-angebot-felder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 22px;
+  margin-bottom: 20px;
+}
+.admin-angebot .form-row { margin-bottom: 20px; }
+.admin-angebot .form-row span {
+  font-size: .68rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.admin-angebot-nav { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.admin-speichern,
+.admin-kopieren {
+  padding: 9px 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 40px;
+  background: transparent;
+  color: var(--gold-ink);
+  font: inherit;
+  font-size: .84rem;
+  cursor: pointer;
+  transition: transform .35s var(--ease), border-color .35s var(--ease), background .35s var(--ease), color .35s var(--ease);
+}
+.admin-speichern:hover,
+.admin-kopieren:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  background: rgba(198, 154, 44, .12);
+  color: var(--text);
+}
+.admin-hinweis { font-size: .84rem; color: var(--gold-ink); }
+
+/* Einnahmen nach Monat */
+.admin-month { margin-top: clamp(48px, 6vw, 70px); }
+.admin-monat {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) 1fr minmax(0, 110px);
+  align-items: center;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.admin-monat-name { font-size: .9rem; color: var(--text-dim); }
+.admin-monat-balken {
+  display: block;
+  height: 4px;
+  background: rgba(211, 172, 102, .22);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.admin-monat-balken i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-light), var(--gold));
+  transform-origin: left;
+  transition: transform .7s var(--ease);
+}
+.admin-monat-wert { text-align: right; font-size: .93rem; color: var(--text); }
+
+@media (max-width: 820px) {
+  .admin-item-head {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "name badge" "projekt betrag" "datum datum";
+    gap: 6px 12px;
+  }
+  .admin-item-name { grid-area: name; }
+  .admin-badge { grid-area: badge; justify-self: end; }
+  .admin-item-projekt { grid-area: projekt; }
+  .admin-item-betrag { grid-area: betrag; }
+  .admin-item-datum { grid-area: datum; }
+  .admin-monat { grid-template-columns: 1fr auto; }
+  .admin-monat-balken { grid-column: 1 / -1; order: 3; }
+}

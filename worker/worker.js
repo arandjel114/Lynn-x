@@ -9,7 +9,14 @@
  * Diese Datei ist bewusst eine einzige Datei ohne Abhängigkeiten. Sie lässt
  * sich direkt in den Cloudflare-Editor einfügen. Kein Node.js, kein Terminal.
  *
- * Antworten gehen als NDJSON an den Browser, eine JSON-Zeile pro Ereignis:
+ * Der Worker bedient vier Dinge:
+ *   POST /            Chat mit X (NDJSON-Stream, eine JSON-Zeile pro Ereignis)
+ *   POST /anfrage     Anfrage aus dem Kontaktformular speichern
+ *   POST /admin/login Passwort prüfen, Sitzung eröffnen
+ *   GET  /admin/daten Anfragen und Zahlen für den geschützten Bereich
+ *   POST /admin/anfrage  Status, Angebot oder Notiz einer Anfrage ändern
+ *
+ * Der Chat-Stream schickt je Zeile:
  *   {"type":"delta","text":"…"}    Textstück
  *   {"type":"error","message":"…"} Fehler
  *   {"type":"done"}                fertig
@@ -217,6 +224,13 @@ const RATE_LIMIT_WINDOW = 600; // … pro 10 Minuten und IP
 
 const DEFAULT_ORIGINS = ["https://lynq-x.de", "https://www.lynq-x.de"];
 
+/* Zugang zum geschützten Bereich. Besser über die Bindung ADMIN_PASSWORT
+   setzen, dann steht das Passwort nicht im Code. */
+const DEFAULT_PASSWORT = "1412z";
+const SESSION_TTL = 43200;      // Sitzung gilt 12 Stunden
+const LOGIN_MAX = 5;            // Fehlversuche …
+const LOGIN_FENSTER = 900;      // … pro 15 Minuten und IP
+
 /* ============================================================
    3. Hilfsfunktionen
    ============================================================ */
@@ -233,8 +247,8 @@ function corsHeaders(origin, env) {
   const allow = origin && list.includes(origin) ? origin : list[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
@@ -286,7 +300,218 @@ function line(payload) {
 }
 
 /* ============================================================
-   4. Der Worker
+   4. Anfragen und geschützter Bereich
+   ============================================================ */
+
+function jsonAntwort(daten, cors, status = 200) {
+  return new Response(JSON.stringify(daten), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+  });
+}
+
+/** Vergleich ohne Zeitunterschied, damit sich das Passwort nicht erraten lässt. */
+function gleich(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+const text = (wert, max = 400) =>
+  typeof wert === "string" ? wert.trim().slice(0, max) : "";
+
+/* --- Anfrage aus dem Kontaktformular entgegennehmen --- */
+async function anfrageSpeichern(request, env, cors) {
+  if (!env.ANFRAGEN) return jsonAntwort({ fehler: "Kein Speicher eingerichtet." }, cors, 500);
+
+  let daten;
+  try {
+    daten = await request.json();
+  } catch {
+    return jsonAntwort({ fehler: "Ungültige Anfrage." }, cors, 400);
+  }
+
+  const name = text(daten.name, 120);
+  const email = text(daten.email, 160);
+  if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return jsonAntwort({ fehler: "Name und E-Mail fehlen oder sind unvollständig." }, cors, 400);
+  }
+
+  const jetzt = new Date().toISOString();
+  const id = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  const eintrag = {
+    id,
+    eingang: jetzt,
+    name,
+    email,
+    projekt: text(daten.projekt, 120),
+    branche: text(daten.branche, 120),
+    ziel: text(daten.ziel, 120),
+    bestand: text(daten.bestand, 120),
+    zeit: text(daten.zeit, 120),
+    budget: text(daten.budget, 120),
+    nachricht: text(daten.nachricht, 2000),
+    status: "neu",
+    notiz: "",
+    angebot: null,
+  };
+
+  await env.ANFRAGEN.put(`anfrage:${id}`, JSON.stringify(eintrag));
+  return jsonAntwort({ ok: true }, cors);
+}
+
+/* --- Anmeldung --- */
+async function login(request, env, cors) {
+  let daten;
+  try {
+    daten = await request.json();
+  } catch {
+    return jsonAntwort({ fehler: "Ungültige Anfrage." }, cors, 400);
+  }
+
+  /* Fehlversuche zählen. Ein kurzes Passwort ist nur so lange brauchbar,
+     wie niemand beliebig oft raten darf. */
+  const ip = request.headers.get("CF-Connecting-IP") || "unbekannt";
+  const sperrschluessel = `loginfehler:${ip}`;
+  if (env.ANFRAGEN) {
+    const versuche = Number((await env.ANFRAGEN.get(sperrschluessel)) || "0");
+    if (versuche >= LOGIN_MAX) {
+      return jsonAntwort({ fehler: "Zu viele Fehlversuche. Bitte in 15 Minuten erneut probieren." }, cors, 429);
+    }
+  }
+
+  const erwartet = env.ADMIN_PASSWORT || DEFAULT_PASSWORT;
+  if (!gleich(text(daten.passwort, 200), erwartet)) {
+    if (env.ANFRAGEN) {
+      const versuche = Number((await env.ANFRAGEN.get(sperrschluessel)) || "0");
+      await env.ANFRAGEN.put(sperrschluessel, String(versuche + 1), { expirationTtl: LOGIN_FENSTER });
+    }
+    return jsonAntwort({ fehler: "Passwort stimmt nicht." }, cors, 401);
+  }
+
+  if (!env.ANFRAGEN) return jsonAntwort({ fehler: "Kein Speicher eingerichtet." }, cors, 500);
+  await env.ANFRAGEN.delete(sperrschluessel);
+
+  const token = crypto.randomUUID() + crypto.randomUUID();
+  await env.ANFRAGEN.put(`sitzung:${token}`, "1", { expirationTtl: SESSION_TTL });
+  return jsonAntwort({ token }, cors);
+}
+
+/** Gültige Sitzung? Der Token steht im Authorization-Kopf. */
+async function angemeldet(request, env) {
+  if (!env.ANFRAGEN) return false;
+  const kopf = request.headers.get("Authorization") || "";
+  const token = kopf.startsWith("Bearer ") ? kopf.slice(7) : "";
+  if (!token) return false;
+  return (await env.ANFRAGEN.get(`sitzung:${token}`)) === "1";
+}
+
+async function alleAnfragen(env) {
+  const liste = await env.ANFRAGEN.list({ prefix: "anfrage:", limit: 1000 });
+  const eintraege = await Promise.all(
+    liste.keys.map(async (k) => {
+      try {
+        return JSON.parse(await env.ANFRAGEN.get(k.name));
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return eintraege.filter(Boolean).sort((a, b) => b.eingang.localeCompare(a.eingang));
+}
+
+/* --- Anfragen und Zahlen ausliefern --- */
+async function daten(request, env, cors) {
+  const anfragen = await alleAnfragen(env);
+
+  const summe = (liste) => liste.reduce((s, a) => s + (a.angebot?.betrag || 0), 0);
+  const beauftragt = anfragen.filter((a) => a.status === "angenommen");
+  const bezahlt = anfragen.filter((a) => a.status === "bezahlt");
+  const offen = anfragen.filter((a) => a.status === "angebot");
+
+  /* Umsatz nach Monat, gezählt wird der Tag der Zahlung. */
+  const proMonat = {};
+  for (const a of bezahlt) {
+    const monat = (a.angebot?.bezahltAm || a.eingang).slice(0, 7);
+    proMonat[monat] = (proMonat[monat] || 0) + (a.angebot?.betrag || 0);
+  }
+
+  return jsonAntwort(
+    {
+      anfragen,
+      zahlen: {
+        neu: anfragen.filter((a) => a.status === "neu").length,
+        inArbeit: anfragen.filter((a) => a.status === "in_arbeit").length,
+        angeboteOffen: offen.length,
+        angeboteOffenSumme: summe(offen),
+        beauftragtSumme: summe(beauftragt),
+        bezahltSumme: summe(bezahlt),
+        gesamt: anfragen.length,
+        proMonat,
+      },
+    },
+    cors,
+  );
+}
+
+/* --- Status, Angebot oder Notiz ändern --- */
+const STATUS_ERLAUBT = ["neu", "in_arbeit", "angebot", "angenommen", "abgelehnt", "bezahlt"];
+
+async function anfrageAendern(request, env, cors) {
+  let daten;
+  try {
+    daten = await request.json();
+  } catch {
+    return jsonAntwort({ fehler: "Ungültige Anfrage." }, cors, 400);
+  }
+
+  const id = text(daten.id, 80);
+  const schluessel = `anfrage:${id}`;
+  const roh = await env.ANFRAGEN.get(schluessel);
+  if (!roh) return jsonAntwort({ fehler: "Anfrage nicht gefunden." }, cors, 404);
+
+  const eintrag = JSON.parse(roh);
+
+  if (daten.status !== undefined) {
+    if (!STATUS_ERLAUBT.includes(daten.status)) {
+      return jsonAntwort({ fehler: "Unbekannter Status." }, cors, 400);
+    }
+    eintrag.status = daten.status;
+    if (daten.status === "bezahlt") {
+      eintrag.angebot = eintrag.angebot || {};
+      eintrag.angebot.bezahltAm = new Date().toISOString();
+    }
+  }
+
+  if (daten.notiz !== undefined) eintrag.notiz = text(daten.notiz, 4000);
+
+  if (daten.angebot !== undefined) {
+    if (daten.angebot === null) {
+      eintrag.angebot = null;
+    } else {
+      const betrag = Number(daten.angebot.betrag);
+      eintrag.angebot = {
+        ...(eintrag.angebot || {}),
+        betrag: Number.isFinite(betrag) && betrag >= 0 ? Math.round(betrag * 100) / 100 : 0,
+        leistung: text(daten.angebot.leistung, 4000),
+        gueltigBis: text(daten.angebot.gueltigBis, 40),
+        erstelltAm: eintrag.angebot?.erstelltAm || new Date().toISOString(),
+      };
+    }
+  }
+
+  if (daten.loeschen === true) {
+    await env.ANFRAGEN.delete(schluessel);
+    return jsonAntwort({ ok: true, geloescht: true }, cors);
+  }
+
+  await env.ANFRAGEN.put(schluessel, JSON.stringify(eintrag));
+  return jsonAntwort({ ok: true, anfrage: eintrag }, cors);
+}
+
+/* ============================================================
+   5. Der Worker
    ============================================================ */
 
 export default {
@@ -297,11 +522,32 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors });
     }
-    if (request.method !== "POST") {
-      return jsonError(405, "Nur POST.", cors);
-    }
     if (origin && !allowedOrigins(env).includes(origin)) {
       return jsonError(403, "Origin nicht erlaubt.", cors);
+    }
+
+    /* --- Wegweisung --- */
+    const pfad = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
+
+    if (pfad === "/anfrage" && request.method === "POST") {
+      return anfrageSpeichern(request, env, cors);
+    }
+    if (pfad === "/admin/login" && request.method === "POST") {
+      return login(request, env, cors);
+    }
+    if (pfad.startsWith("/admin/")) {
+      if (!env.ANFRAGEN) return jsonAntwort({ fehler: "Kein Speicher eingerichtet." }, cors, 500);
+      if (!(await angemeldet(request, env))) {
+        return jsonAntwort({ fehler: "Nicht angemeldet." }, cors, 401);
+      }
+      if (pfad === "/admin/daten" && request.method === "GET") return daten(request, env, cors);
+      if (pfad === "/admin/anfrage" && request.method === "POST") return anfrageAendern(request, env, cors);
+      return jsonAntwort({ fehler: "Unbekannter Aufruf." }, cors, 404);
+    }
+
+    /* --- alles Übrige ist der Chat --- */
+    if (request.method !== "POST") {
+      return jsonError(405, "Nur POST.", cors);
     }
     if (!env.AI) {
       return jsonError(500, "Der Assistent ist nicht konfiguriert.", cors);

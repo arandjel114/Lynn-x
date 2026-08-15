@@ -9,10 +9,25 @@ binding = "AI"
 [vars]
 ALLOWED_ORIGINS = "https://lynq-x.de,https://www.lynq-x.de"
 
-# Optionale Begrenzung pro Besucher. Erst anlegen:
+# Speicher fuer Anfragen, Angebote und Sitzungen des internen Bereichs.
+# Ohne diesen Speicher laeuft der Chat weiter, aber admin.html bleibt leer.
+# Erst anlegen:
+#   npx wrangler kv namespace create ANFRAGEN
+# Dann die ausgegebene id hier eintragen.
+#
+# [[kv_namespaces]]
+# binding = "ANFRAGEN"
+# id = "HIER_DIE_ID_EINTRAGEN"
+
+# Optionale Begrenzung pro Besucher im Chat. Erst anlegen:
 #   npx wrangler kv namespace create RATE_LIMIT
 # Dann die ausgegebene id eintragen und die drei Zeilen einkommentieren.
 #
 # [[kv_namespaces]]
 # binding = "RATE_LIMIT"
 # id = "HIER_DIE_ID_EINTRAGEN"
+
+# Das Passwort fuer den internen Bereich gehoert nicht in diese Datei, sonst
+# steht es oeffentlich auf GitHub. Als Secret setzen:
+#   npx wrangler secret put ADMIN_PASSWORT
+# Ohne dieses Secret gilt der im Code hinterlegte Standard.

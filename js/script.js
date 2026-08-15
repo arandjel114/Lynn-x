@@ -133,20 +133,52 @@ if (form) {
       `Budget: ${antwort("budget")}\n` +
       (nachricht ? `\nAnmerkung:\n${nachricht}\n` : "");
 
-    window.location.href =
-      `mailto:${CONTACT_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const perMail = () => {
+      window.location.href =
+        `mailto:${CONTACT_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      formNote.textContent =
+        "Dein E-Mail-Programm öffnet sich mit der fertigen Anfrage. Bitte dort auf Senden klicken.";
+      /* Nicht auf jedem Gerät ist ein Mailprogramm eingerichtet. Wer sonst vor
+         einer leeren Seite säße, kann die Anfrage hier kopieren. */
+      const fallback = document.getElementById("quizFallback");
+      const summary = document.getElementById("quizSummary");
+      if (fallback && summary) {
+        summary.value = body;
+        fallback.hidden = false;
+      }
+    };
 
-    formNote.textContent =
-      "Dein E-Mail-Programm öffnet sich mit der fertigen Anfrage. Bitte dort auf Senden klicken.";
+    const api = (window.LYNQX_API || "").replace(/\/+$/, "");
+    if (!api) return perMail();
 
-    /* Nicht auf jedem Gerät ist ein Mailprogramm eingerichtet. Wer sonst vor
-       einer leeren Seite säße, kann die Anfrage hier kopieren. */
-    const fallback = document.getElementById("quizFallback");
-    const summary = document.getElementById("quizSummary");
-    if (fallback && summary) {
-      summary.value = body;
-      fallback.hidden = false;
-    }
+    /* Steht der Worker, geht die Anfrage direkt in den internen Bereich.
+       Sonst bleibt der Weg über das E-Mail-Programm. */
+    formNote.textContent = "Wird gesendet…";
+    fetch(api + "/anfrage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        email,
+        projekt: antwort("projekt"),
+        branche: antwort("branche"),
+        ziel: antwort("ziel"),
+        bestand: antwort("bestand"),
+        zeit: antwort("zeit"),
+        budget: antwort("budget"),
+        nachricht,
+      }),
+    })
+      .then((antw) => {
+        if (!antw.ok) throw new Error("abgelehnt");
+        form.querySelectorAll("input, textarea").forEach((feld) => {
+          if (feld.type === "radio") feld.checked = false;
+          else feld.value = "";
+        });
+        formNote.textContent =
+          "Danke, deine Anfrage ist angekommen. Wir melden uns innerhalb eines Werktags.";
+      })
+      .catch(perMail);
   });
 
   const copyBtn = document.getElementById("quizCopy");

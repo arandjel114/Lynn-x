@@ -29,27 +29,118 @@ const formNote = document.getElementById("formNote");
    meant enquiries were silently lost. */
 const CONTACT_ADDRESS = "kontakt-lynq-x@outlook.de";
 
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
+/* ---------- Fragebogen: eine Frage pro Schritt ----------
+   Fünf Auswahlfragen, danach die Kontaktdaten. Der Verlauf bleibt im Browser;
+   abgeschickt wird am Ende eine fertig formulierte E-Mail. */
+if (form) {
+  const steps = Array.from(form.querySelectorAll(".quiz-step"));
+  const last = steps.length - 1;
+  const bar = document.getElementById("quizBar");
+  const count = document.getElementById("quizCount");
+  const back = document.getElementById("quizBack");
+  const next = document.getElementById("quizNext");
+  const send = document.getElementById("quizSend");
+  let current = 0;
 
-  const name = form.name.value.trim();
-  const email = form.email.value.trim();
-  const typ = form.typ.options[form.typ.selectedIndex].text;
-  const nachricht = form.nachricht.value.trim();
+  const questionCount = steps.filter((s) => s.querySelector(".quiz-options")).length;
 
-  const subject = `Projektanfrage von ${name}`;
-  const body =
-    `Name: ${name}\n` +
-    `E-Mail: ${email}\n` +
-    `Ich bin: ${typ}\n\n` +
-    `${nachricht}\n`;
+  function render() {
+    steps.forEach((step, i) => step.classList.toggle("is-active", i === current));
+    bar.style.transform = `scaleX(${(current + 1) / steps.length})`;
+    count.textContent =
+      current < questionCount
+        ? `Frage ${current + 1} von ${questionCount}`
+        : "Nur noch deine Kontaktdaten";
+    back.hidden = current === 0;
+    next.hidden = current === last;
+    send.hidden = current !== last;
+    formNote.textContent = "";
+  }
 
-  window.location.href =
-    `mailto:${CONTACT_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  /* Erst prüfen, dann weiter. Ohne Antwort bringt die nächste Frage nichts. */
+  function stepAnswered() {
+    const group = steps[current].querySelector('input[type="radio"]');
+    if (!group) return true;
+    return !!form.querySelector(`input[name="${group.name}"]:checked`);
+  }
 
-  formNote.textContent =
-    "Dein E-Mail-Programm öffnet sich mit der fertigen Nachricht. Bitte dort auf Senden klicken.";
-});
+  function goNext() {
+    if (!stepAnswered()) {
+      formNote.textContent = "Bitte wähl eine Antwort aus.";
+      return;
+    }
+    if (current < last) {
+      current += 1;
+      render();
+      /* Damit die nächste Frage nicht außerhalb des Bildes auftaucht. */
+      steps[current].scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+    }
+  }
+
+  next.addEventListener("click", goNext);
+  back.addEventListener("click", () => {
+    if (current > 0) {
+      current -= 1;
+      render();
+    }
+  });
+
+  /* Eine Auswahl ist eine Antwort: direkt weiterspringen, kurz verzögert,
+     damit man die getroffene Wahl noch sieht. */
+  form.addEventListener("change", (event) => {
+    if (event.target.type !== "radio") return;
+    formNote.textContent = "";
+    window.setTimeout(goNext, reduceMotion ? 0 : 260);
+  });
+
+  /* Enter soll im Fragebogen weiterblättern statt abzuschicken. */
+  form.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && current < last && event.target.tagName !== "TEXTAREA") {
+      event.preventDefault();
+      goNext();
+    }
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const name = form.name.value.trim();
+    const email = form.email.value.trim();
+    if (!name || !email) {
+      formNote.textContent = "Bitte trag noch Name und E-Mail ein, sonst können wir nicht antworten.";
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      formNote.textContent = "Diese E-Mail-Adresse sieht nicht vollständig aus.";
+      return;
+    }
+
+    const antwort = (feld) => {
+      const checked = form.querySelector(`input[name="${feld}"]:checked`);
+      return checked ? checked.value : "keine Angabe";
+    };
+    const nachricht = form.nachricht.value.trim();
+
+    const subject = `Projektanfrage von ${name}`;
+    const body =
+      `Name: ${name}\n` +
+      `E-Mail: ${email}\n\n` +
+      `Worum es geht: ${antwort("projekt")}\n` +
+      `Branche: ${antwort("branche")}\n` +
+      `Ziel: ${antwort("ziel")}\n` +
+      `Vorhanden: ${antwort("bestand")}\n` +
+      `Zeitrahmen: ${antwort("zeit")}\n` +
+      (nachricht ? `\nAnmerkung:\n${nachricht}\n` : "");
+
+    window.location.href =
+      `mailto:${CONTACT_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    formNote.textContent =
+      "Dein E-Mail-Programm öffnet sich mit der fertigen Anfrage. Bitte dort auf Senden klicken.";
+  });
+
+  render();
+}
 
 /* ---------- Count-up numbers ---------- */
 function runCountUp() {

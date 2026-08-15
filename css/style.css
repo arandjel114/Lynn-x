@@ -1383,13 +1383,9 @@ h1 .word:last-child {
 .kontakt-info a { color: var(--gold-ink); transition: color .2s; }
 .kontakt-info a:hover { color: var(--gold); }
 
-.kontakt-form {
-  display: flex;
-  flex-direction: column;
-  gap: 26px;
-  border-top: 1px solid var(--border-soft);
-  padding-top: 30px;
-}
+/* Die Kontaktfelder im letzten Schritt brauchen dieselbe Luft,
+   die das alte Formular ueber gap hatte. */
+.quiz-step .form-row + .form-row { margin-top: 24px; }
 .form-row { display: flex; flex-direction: column; gap: 8px; }
 .form-row label { font-size: .88rem; color: var(--text-dim); }
 .form-row input,
@@ -2367,3 +2363,175 @@ h1 .word:last-child {
   opacity: .88;
 }
 .team-structure + .team-note { margin-top: 14px; }
+
+/* ============================================================
+   Fragebogen im Kontaktbereich
+   ============================================================ */
+.quiz { position: relative; }
+
+.quiz-head { margin-bottom: clamp(26px, 4vw, 40px); }
+.quiz-count {
+  margin: 0 0 12px;
+  font-size: .72rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--gold-ink);
+}
+.quiz-progress {
+  height: 1px;
+  background: var(--border-soft);
+  overflow: hidden;
+}
+.quiz-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-light), var(--gold));
+  transform-origin: left;
+  transform: scaleX(.16);
+  transition: transform .55s var(--ease);
+}
+
+/* Nur der aktive Schritt ist da. display:none, damit ausgeblendete
+   Felder nicht per Tab erreichbar bleiben. */
+.quiz-step {
+  display: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.quiz-step.is-active {
+  display: block;
+  animation: quizIn .5s var(--ease) both;
+}
+@keyframes quizIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.quiz-q {
+  padding: 0;
+  margin: 0 0 clamp(20px, 3vw, 30px);
+  font-family: var(--font-display, inherit);
+  font-size: clamp(1.3rem, 2.6vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -.015em;
+  color: var(--text);
+}
+
+.quiz-options { display: grid; gap: 2px; }
+
+/* Kein Kasten: jede Option ist eine Zeile auf einer Haarlinie,
+   die beim Auswählen von links nach rechts golden durchläuft. */
+.quiz-opt {
+  position: relative;
+  display: block;
+  padding: 15px 40px 15px 2px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-soft);
+  transition: padding-left .4s var(--ease);
+}
+.quiz-opt input {
+  position: absolute;
+  opacity: 0;
+  width: 1px; height: 1px;
+  margin: 0;
+}
+.quiz-opt span {
+  position: relative;
+  z-index: 1;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  transition: color .35s var(--ease);
+}
+.quiz-opt::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .45s var(--ease);
+}
+/* Der Haken erscheint rechts, sobald die Option gewählt ist. */
+.quiz-opt::after {
+  content: "✓";
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%) scale(.6);
+  font-size: .95rem;
+  color: var(--gold-ink);
+  opacity: 0;
+  transition: opacity .3s var(--ease), transform .4s var(--ease);
+}
+.quiz-opt:hover { padding-left: 10px; }
+.quiz-opt:hover span { color: var(--text); }
+.quiz-opt:hover::before { transform: scaleX(.35); }
+.quiz-opt input:checked ~ span { color: var(--text); font-weight: 600; }
+.quiz-opt:has(input:checked) { padding-left: 10px; }
+.quiz-opt:has(input:checked)::before { transform: scaleX(1); }
+.quiz-opt:has(input:checked)::after { opacity: 1; transform: translateY(-50%) scale(1); }
+.quiz-opt:focus-within {
+  outline: 2px solid var(--gold-ink);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.form-optional {
+  font-size: .78rem;
+  letter-spacing: .04em;
+  text-transform: none;
+  color: var(--text-dim);
+  opacity: .75;
+}
+
+.quiz-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 28px);
+  margin-top: clamp(28px, 4vw, 40px);
+  flex-wrap: wrap;
+}
+.quiz-back {
+  order: 2;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: .88rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color .3s var(--ease), transform .3s var(--ease);
+}
+.quiz-back:hover { color: var(--gold-ink); transform: translateX(-3px); }
+.cta-quiz {
+  order: 1;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.quiz-escape {
+  margin: 18px 0 0;
+  font-size: .82rem;
+  color: var(--text-dim);
+}
+.quiz-escape a {
+  color: var(--gold-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.quiz-escape a:hover { color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-step.is-active { animation: none; }
+  .quiz-progress span { transition: none; }
+}
+
+/* [hidden] setzt display:none nur im Browser-Standard. Jede eigene
+   display-Regel schlaegt das, deshalb hier ausdruecklich. */
+.quiz-nav [hidden] { display: none !important; }

@@ -6,7 +6,7 @@
 <title>Lynq-x: Websites, die verkaufen. Nicht nur gut aussehen.</title>
 <meta name="description" content="Lynq-x baut handprogrammierte Websites und Marketing für Unternehmen und Privatpersonen, die Besucher zu Anfragen machen. Kein Baukasten, keine Vorlage.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-<link rel="stylesheet" href="css/style.css?v=21">
+<link rel="stylesheet" href="css/style.css?v=24">
 </head>
 <body class="is-loading">
 
@@ -447,28 +447,96 @@
           <li>📍 Köln · Remote &amp; vor Ort</li>
         </ul>
       </div>
-      <form class="kontakt-form reveal" id="contactForm">
-        <div class="form-row">
-          <label for="name">Name</label>
-          <input type="text" id="name" name="name" required placeholder="Dein Name">
+      <form class="quiz reveal" id="contactForm" novalidate>
+        <div class="quiz-head">
+          <p class="quiz-count" id="quizCount">Frage 1 von 5</p>
+          <div class="quiz-progress" aria-hidden="true"><span id="quizBar"></span></div>
         </div>
-        <div class="form-row">
-          <label for="email">E-Mail</label>
-          <input type="email" id="email" name="email" required placeholder="du@beispiel.de">
+
+        <fieldset class="quiz-step is-active" data-step="1">
+          <legend class="quiz-q">Worum geht es?</legend>
+          <div class="quiz-options">
+            <label class="quiz-opt"><input type="radio" name="projekt" value="Neue Website"><span>Neue Website</span></label>
+            <label class="quiz-opt"><input type="radio" name="projekt" value="Bestehende Website überarbeiten"><span>Bestehende Website überarbeiten</span></label>
+            <label class="quiz-opt"><input type="radio" name="projekt" value="Onlineshop"><span>Onlineshop</span></label>
+            <label class="quiz-opt"><input type="radio" name="projekt" value="Bestellsystem für Gastro"><span>Bestellsystem für Gastro</span></label>
+            <label class="quiz-opt"><input type="radio" name="projekt" value="Marketing und Sichtbarkeit"><span>Marketing und Sichtbarkeit</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quiz-step" data-step="2">
+          <legend class="quiz-q">In welcher Branche bist du unterwegs?</legend>
+          <div class="quiz-options">
+            <label class="quiz-opt"><input type="radio" name="branche" value="Gastronomie"><span>Gastronomie</span></label>
+            <label class="quiz-opt"><input type="radio" name="branche" value="Handwerk und Bau"><span>Handwerk und Bau</span></label>
+            <label class="quiz-opt"><input type="radio" name="branche" value="Dienstleistung"><span>Dienstleistung</span></label>
+            <label class="quiz-opt"><input type="radio" name="branche" value="Praxis oder Kanzlei"><span>Praxis oder Kanzlei</span></label>
+            <label class="quiz-opt"><input type="radio" name="branche" value="Handel"><span>Handel</span></label>
+            <label class="quiz-opt"><input type="radio" name="branche" value="Etwas anderes"><span>Etwas anderes</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quiz-step" data-step="3">
+          <legend class="quiz-q">Was soll die Seite vor allem bringen?</legend>
+          <div class="quiz-options">
+            <label class="quiz-opt"><input type="radio" name="ziel" value="Mehr Anfragen"><span>Mehr Anfragen</span></label>
+            <label class="quiz-opt"><input type="radio" name="ziel" value="Online verkaufen"><span>Online verkaufen</span></label>
+            <label class="quiz-opt"><input type="radio" name="ziel" value="Bei Google gefunden werden"><span>Bei Google gefunden werden</span></label>
+            <label class="quiz-opt"><input type="radio" name="ziel" value="Bestellungen annehmen"><span>Bestellungen annehmen</span></label>
+            <label class="quiz-opt"><input type="radio" name="ziel" value="Professioneller auftreten"><span>Professioneller auftreten</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quiz-step" data-step="4">
+          <legend class="quiz-q">Was ist schon vorhanden?</legend>
+          <div class="quiz-options">
+            <label class="quiz-opt"><input type="radio" name="bestand" value="Noch gar nichts"><span>Noch gar nichts</span></label>
+            <label class="quiz-opt"><input type="radio" name="bestand" value="Nur eine Domain"><span>Nur eine Domain</span></label>
+            <label class="quiz-opt"><input type="radio" name="bestand" value="Eine alte Website"><span>Eine alte Website</span></label>
+            <label class="quiz-opt"><input type="radio" name="bestand" value="Logo und Texte sind da"><span>Logo und Texte sind da</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quiz-step" data-step="5">
+          <legend class="quiz-q">Wann soll es live sein?</legend>
+          <div class="quiz-options">
+            <label class="quiz-opt"><input type="radio" name="zeit" value="So schnell wie möglich"><span>So schnell wie möglich</span></label>
+            <label class="quiz-opt"><input type="radio" name="zeit" value="In 1 bis 3 Monaten"><span>In 1 bis 3 Monaten</span></label>
+            <label class="quiz-opt"><input type="radio" name="zeit" value="Dieses Jahr"><span>Dieses Jahr</span></label>
+            <label class="quiz-opt"><input type="radio" name="zeit" value="Noch offen"><span>Noch offen</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quiz-step" data-step="6">
+          <legend class="quiz-q">Wie erreichen wir dich?</legend>
+          <div class="form-row">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" autocomplete="name" placeholder="Dein Name">
+          </div>
+          <div class="form-row">
+            <label for="email">E-Mail</label>
+            <input type="email" id="email" name="email" autocomplete="email" placeholder="du@beispiel.de">
+          </div>
+          <div class="form-row">
+            <label for="nachricht">Willst du noch etwas dazusagen? <span class="form-optional">optional</span></label>
+            <textarea id="nachricht" name="nachricht" rows="3" placeholder="Was dir sonst noch wichtig ist"></textarea>
+          </div>
+        </fieldset>
+
+        <div class="quiz-nav">
+          <button type="button" class="quiz-back" id="quizBack" hidden>&larr; Zurück</button>
+          <button type="button" class="cta cta-quiz" id="quizNext">
+            <span class="cta-label">Weiter</span>
+            <span class="cta-orb" aria-hidden="true"><span class="cta-orb-arrow">&rarr;</span></span>
+          </button>
+          <button type="submit" class="cta cta-quiz" id="quizSend" hidden>
+            <span class="cta-label">Anfrage senden</span>
+            <span class="cta-orb" aria-hidden="true"><span class="cta-orb-arrow">&rarr;</span></span>
+          </button>
         </div>
-        <div class="form-row">
-          <label for="typ">Ich bin</label>
-          <select id="typ" name="typ">
-            <option value="unternehmen">Unternehmen</option>
-            <option value="privat">Privatperson</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label for="nachricht">Nachricht</label>
-          <textarea id="nachricht" name="nachricht" rows="4" required placeholder="Erzähl uns kurz von deinem Projekt..."></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block magnetic"><span>Nachricht senden <span class="btn-arrow">→</span></span></button>
+
         <p class="form-note" id="formNote" role="status"></p>
+        <p class="quiz-escape">Lieber direkt schreiben? <a href="mailto:kontakt-lynq-x@outlook.de">kontakt-lynq-x@outlook.de</a></p>
       </form>
     </div>
   </section>
@@ -512,7 +580,7 @@
   </div>
 </footer>
 
-<script src="js/script.js?v=21"></script>
-<script src="js/assistant.js?v=21" defer></script>
+<script src="js/script.js?v=24"></script>
+<script src="js/assistant.js?v=24" defer></script>
 </body>
 </html>

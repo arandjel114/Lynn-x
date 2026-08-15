@@ -449,10 +449,13 @@ async function anfrageSpeichern(request, env, cors, ctx) {
       .join("\n"),
   );
 
-  /* Die Push läuft weiter, nachdem der Besucher längst seine Bestätigung
-     hat. Er soll nicht darauf warten, dass Telegram antwortet. */
-  if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(push);
-  else await push;
+  /* Bewusst abwarten, statt die Push nebenher laufen zu lassen. Nebenher
+     ist sparsamer, aber Cloudflare garantiert nicht, dass so eine Aufgabe
+     immer zu Ende laeuft: dann kommt die Benachrichtigung mal an und mal
+     nicht. Die halbe Sekunde Wartezeit ist das wert. Scheitern kann die
+     Anfrage daran nicht, telegram() faengt alles ab. */
+  await push;
+  void ctx;
 
   return jsonAntwort({ ok: true }, cors);
 }

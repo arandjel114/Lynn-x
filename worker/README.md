@@ -14,7 +14,33 @@ Es geht also nichts kaputt, wenn du dir Zeit lässt.
 
 ---
 
-## Weg A: Ohne Terminal, direkt im Browser (empfohlen)
+## So läuft es jetzt: Deploy aus Git
+
+Der Worker ist mit diesem Repository verbunden. Jeder Push auf `main` löst bei
+Cloudflare einen Build aus, der `worker/worker.js` und `worker/wrangler.toml`
+nimmt und ausrollt. Du musst nichts mehr kopieren.
+
+Damit das trägt, gehört alles Wichtige in `wrangler.toml`, denn **bei einem
+Deploy aus Git ist diese Datei maßgeblich**. Was dort fehlt, wird beim Worker
+entfernt, auch wenn du es vorher im Dashboard angeklickt hast. Betroffen sind
+der Name des Workers, die AI-Bindung, der KV-Speicher und Variablen.
+
+Nicht betroffen sind **Secrets**. Die liegen getrennt und überstehen jeden
+Deploy. Token und Passwörter gehören deshalb ausschließlich dorthin und
+niemals in `wrangler.toml`, die ist öffentlich.
+
+**Wenn ein Build da ist, aber nichts ankommt:** Schau unter **Deployments**
+in die Spalte **Traffic %**. Steht dort 0 %, liegt die neue Version bereit,
+bekommt aber keine Aufrufe. Dann über **New deployment** die oberste Version
+auswählen und den Regler auf 100 % stellen.
+
+**Wenn ein Build fehlschlägt:** Meist stimmt das **Root directory** nicht.
+Es muss auf `worker` stehen, weil `worker.js` in diesem Unterordner liegt
+und nicht im Hauptverzeichnis.
+
+---
+
+## Falls die Git-Verbindung einmal fehlt: von Hand
 
 Du brauchst nur deinen Cloudflare-Account. Kein Node.js, keine Installation.
 

@@ -363,9 +363,17 @@ function menge(wert) {
    Darf niemals dazu führen, dass eine Anfrage verloren geht. Deshalb ist
    hier alles in try/catch und der Rückgabewert interessiert niemanden. */
 async function telegram(env, nachricht) {
-  if (!env.TELEGRAM_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+  if (!env.TELEGRAM_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    console.log(
+      "Telegram: uebersprungen. Token vorhanden:",
+      Boolean(env.TELEGRAM_TOKEN),
+      "Chat-Id vorhanden:",
+      Boolean(env.TELEGRAM_CHAT_ID),
+    );
+    return;
+  }
   try {
-    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
+    const antwort = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -374,8 +382,12 @@ async function telegram(env, nachricht) {
         disable_web_page_preview: true,
       }),
     });
-  } catch {
-    /* Kein Netz zu Telegram? Dann eben keine Push. Die Anfrage liegt sicher im Speicher. */
+    /* Telegram antwortet auch bei Fehlern mit einem lesbaren Grund, etwa
+       "chat not found". Ohne den steht man bei der Fehlersuche im Dunkeln. */
+    const inhalt = await antwort.text();
+    console.log("Telegram:", antwort.status, inhalt.slice(0, 300));
+  } catch (fehler) {
+    console.log("Telegram nicht erreichbar:", String(fehler).slice(0, 200));
   }
 }
 

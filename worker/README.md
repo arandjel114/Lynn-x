@@ -190,10 +190,99 @@ Tab schließt.
 
 **Was du dort tun kannst**
 
-Anfrage aufklappen, Betrag und Leistungen eintragen, speichern. Über
-*Angebotstext kopieren* bekommst du einen fertigen Text für die Mail. Den
-Status ziehst du von *Neu* über *Angebot raus* bis *Bezahlt*; sobald etwas auf
-*Bezahlt* steht, taucht es in den Einnahmen und in der Monatsübersicht auf.
+Die Seite hat zwei Reiter.
+
+Unter **Anfragen** liegt alles, was über das Formular reinkommt, mit sämtlichen
+Antworten aus dem Fragebogen. Du kannst direkt aus der Anfrage heraus
+antworten: der Text ist vorbereitet, du änderst ihn und schickst ihn ab.
+*Angebot daraus schreiben* öffnet ein Angebot, in dem Name, E-Mail und Thema
+schon eingetragen sind.
+
+Unter **Angebote** stehen die Angebote selbst. Sie hängen nicht an einer
+Anfrage: über *Neues Angebot* legst du auch eins für jemanden an, der dich
+angerufen oder empfohlen bekommen hat. Jedes Angebot bekommt eine fortlaufende
+Nummer (2026-001, 2026-002 …), Kundenanschrift, beliebig viele Positionen mit
+Menge und Einzelpreis, optional einen Rabatt, Gültigkeitsdatum, Zeitrahmen und
+Zahlungsbedingungen. Die Summen rechnen sich beim Tippen mit.
+
+Voreingestellt ist die Kleinunternehmerregelung nach § 19 UStG, das Angebot
+weist also keine Umsatzsteuer aus und trägt den vorgeschriebenen Hinweis.
+Pro Angebot kannst du auf 19 Prozent umschalten, falls du die Regelung einmal
+verlässt. Dauerhaft umstellen lässt es sich oben in `worker.js` mit
+`const KLEINUNTERNEHMER = false;`.
+
+Fertig? Dann *Text kopieren*, *Direkt senden* oder *Im Mailprogramm öffnen*.
+Den Status ziehst du von *Entwurf* über *Versendet* bis *Bezahlt*. Sobald ein
+Angebot auf *Bezahlt* steht, taucht es in den Einnahmen und in der
+Monatsübersicht auf, und die zugehörige Anfrage wandert automatisch mit.
+
+Was auf jedem Angebot oben im Briefkopf steht, kommt aus dem Block `ABSENDER`
+in `worker.js`. Adresse oder Telefonnummer ändern sich also an einer Stelle.
+
+---
+
+## Benachrichtigung aufs Handy (Telegram)
+
+Ohne das hier musst du selbst nachsehen, ob etwas reingekommen ist. Mit dem
+hier bekommst du eine Push, sobald jemand das Formular abschickt.
+
+**1. Bot anlegen**
+
+- In Telegram nach **@BotFather** suchen und den Chat öffnen
+- `/newbot` schicken
+- Einen Namen vergeben, dann einen Benutzernamen, der auf `bot` endet,
+  zum Beispiel `lynqx_anfragen_bot`
+- BotFather antwortet mit einem Token in der Form `123456789:AAF...`.
+  Den brauchst du gleich, gib ihn niemandem.
+
+**2. Deine Chat-Id herausfinden**
+
+- Deinen neuen Bot in Telegram suchen und **Start** drücken. Ohne diesen
+  Schritt darf der Bot dir nichts schicken.
+- Diese Adresse im Browser öffnen, `DEIN_TOKEN` ersetzen:
+  `https://api.telegram.org/botDEIN_TOKEN/getUpdates`
+- In der Antwort steht `"chat":{"id":123456789`. Diese Zahl ist deine Chat-Id.
+  Steht da nur `{"ok":true,"result":[]}`, hast du **Start** noch nicht gedrückt.
+
+**3. Beides beim Worker hinterlegen**
+
+- Worker → **Settings** → **Variables and Secrets** → **Add**
+- Typ **Secret**, Name `TELEGRAM_TOKEN`, Wert der Token von BotFather
+- Noch einmal **Add**, Typ **Secret**, Name `TELEGRAM_CHAT_ID`, Wert die Zahl
+- Speichern und **Deploy**
+
+Fertig. Ab der nächsten Anfrage kommt die Push mit Name, Budget und Nachricht.
+
+Falls einmal keine kommt: die Anfrage ist trotzdem gespeichert. Der Worker
+behandelt die Benachrichtigung als Beiwerk und lässt eine Anfrage nie deshalb
+scheitern.
+
+---
+
+## Mails direkt aus dem Tool verschicken (optional)
+
+Ohne diesen Schritt funktioniert das Antworten trotzdem, es öffnet dann eben
+dein Mailprogramm. Der Vorteil davon: die Mail liegt danach in deinem Ordner
+„Gesendet“. Der Nachteil: es sind zwei Klicks mehr.
+
+Wenn du direkt aus dem Tool senden willst, brauchst du einen Mailversender.
+[Resend](https://resend.com) hat einen dauerhaft kostenlosen Tarif mit 100
+Mails am Tag.
+
+- Bei Resend anmelden, unter **Domains** die Domain `lynq-x.de` hinzufügen
+  und die angezeigten DNS-Einträge bei deinem Domainanbieter eintragen
+- Unter **API Keys** einen Schlüssel erzeugen
+- Beim Worker unter **Variables and Secrets**:
+  - **Secret** `RESEND_KEY` mit dem Schlüssel
+  - **Text** `MAIL_VON` mit dem Absender, zum Beispiel
+    `Lynq-x <angebot@lynq-x.de>`
+  - optional **Text** `MAIL_ANTWORT`, falls Antworten woanders hin sollen als
+    an `kontakt-lynq-x@outlook.de`
+- **Deploy**
+
+Sobald beides gesetzt ist, erscheinen im Tool die Knöpfe *Direkt senden*. Die
+Domain muss dabei wirklich bei Resend freigeschaltet sein: von einer fremden
+Adresse wie `@outlook.de` darf niemand in deinem Namen versenden.
 
 ---
 

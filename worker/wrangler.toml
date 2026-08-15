@@ -31,3 +31,13 @@ ALLOWED_ORIGINS = "https://lynq-x.de,https://www.lynq-x.de"
 # steht es oeffentlich auf GitHub. Als Secret setzen:
 #   npx wrangler secret put ADMIN_PASSWORT
 # Ohne dieses Secret gilt der im Code hinterlegte Standard.
+
+# Benachrichtigung bei neuen Anfragen. Beides als Secret setzen:
+#   npx wrangler secret put TELEGRAM_TOKEN
+#   npx wrangler secret put TELEGRAM_CHAT_ID
+# Ohne diese beiden laeuft alles weiter, es kommt nur keine Push.
+
+# Mailversand direkt aus dem Angebotstool. Optional:
+#   npx wrangler secret put RESEND_KEY
+# und dazu MAIL_VON als Variable, z. B. "Lynq-x <angebot@lynq-x.de>".
+# Fehlt eins von beiden, bleibt es beim Weg ueber das Mailprogramm.

@@ -231,6 +231,30 @@ const SESSION_TTL = 43200;      // Sitzung gilt 12 Stunden
 const LOGIN_MAX = 5;            // Fehlversuche …
 const LOGIN_FENSTER = 900;      // … pro 15 Minuten und IP
 
+/* Angebote. Kleinunternehmer nach § 19 UStG weist keine Umsatzsteuer aus.
+   Wer die Regelung später verlässt, setzt KLEINUNTERNEHMER auf false. */
+const KLEINUNTERNEHMER = true;
+const UST_SATZ = 19;
+const UST_HINWEIS =
+  "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.";
+
+/* Absender auf dem Angebot. Steht hier und nicht im Browser, damit sich
+   an einer Stelle ändern lässt, was auf jedem Angebot auftaucht. */
+const ABSENDER = {
+  firma: "Lynq-x",
+  zusatz: "eine Marke von Project X Marketing Solution",
+  inhaber: "Arandjel Jovanovic",
+  strasse: "Niehler Str. 45",
+  ort: "50733 Köln",
+  telefon: "0151 74367509",
+  email: "kontakt-lynq-x@outlook.de",
+  web: "lynq-x.de",
+};
+
+/* Vorbelegung für neue Angebote. */
+const ZAHLUNG_STANDARD = "50 % bei Auftragsstart, 50 % nach Livegang. Zahlbar innerhalb von 14 Tagen ohne Abzug.";
+const GUELTIG_TAGE = 30;
+
 /* ============================================================
    3. Hilfsfunktionen
    ============================================================ */
@@ -321,8 +345,42 @@ function gleich(a, b) {
 const text = (wert, max = 400) =>
   typeof wert === "string" ? wert.trim().slice(0, max) : "";
 
+/** Geldbetrag auf Cent gerundet, niemals NaN und niemals negativ. */
+function geld(wert) {
+  const zahl = Number(wert);
+  if (!Number.isFinite(zahl) || zahl < 0) return 0;
+  return Math.round(zahl * 100) / 100;
+}
+
+/** Menge darf auch 0,5 sein (halbe Stunden, halbe Tage). */
+function menge(wert) {
+  const zahl = Number(wert);
+  if (!Number.isFinite(zahl) || zahl < 0) return 0;
+  return Math.round(zahl * 1000) / 1000;
+}
+
+/* --- Benachrichtigung aufs Handy ---
+   Darf niemals dazu führen, dass eine Anfrage verloren geht. Deshalb ist
+   hier alles in try/catch und der Rückgabewert interessiert niemanden. */
+async function telegram(env, nachricht) {
+  if (!env.TELEGRAM_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_CHAT_ID,
+        text: nachricht,
+        disable_web_page_preview: true,
+      }),
+    });
+  } catch {
+    /* Kein Netz zu Telegram? Dann eben keine Push. Die Anfrage liegt sicher im Speicher. */
+  }
+}
+
 /* --- Anfrage aus dem Kontaktformular entgegennehmen --- */
-async function anfrageSpeichern(request, env, cors) {
+async function anfrageSpeichern(request, env, cors, ctx) {
   if (!env.ANFRAGEN) return jsonAntwort({ fehler: "Kein Speicher eingerichtet." }, cors, 500);
 
   let daten;
@@ -358,6 +416,32 @@ async function anfrageSpeichern(request, env, cors) {
   };
 
   await env.ANFRAGEN.put(`anfrage:${id}`, JSON.stringify(eintrag));
+
+  const push = telegram(
+    env,
+    [
+      "🔔 Neue Anfrage bei Lynq-x",
+      "",
+      `${eintrag.name}  ·  ${eintrag.email}`,
+      eintrag.projekt ? `Projekt: ${eintrag.projekt}` : "",
+      eintrag.branche ? `Branche: ${eintrag.branche}` : "",
+      eintrag.ziel ? `Ziel: ${eintrag.ziel}` : "",
+      eintrag.bestand ? `Vorhanden: ${eintrag.bestand}` : "",
+      eintrag.zeit ? `Zeitrahmen: ${eintrag.zeit}` : "",
+      eintrag.budget ? `Budget: ${eintrag.budget}` : "",
+      eintrag.nachricht ? `\n„${eintrag.nachricht}“` : "",
+      "",
+      "https://lynq-x.de/admin.html",
+    ]
+      .filter((z) => z !== "")
+      .join("\n"),
+  );
+
+  /* Die Push läuft weiter, nachdem der Besucher längst seine Bestätigung
+     hat. Er soll nicht darauf warten, dass Telegram antwortet. */
+  if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(push);
+  else await push;
+
   return jsonAntwort({ ok: true }, cors);
 }
 
@@ -421,33 +505,264 @@ async function alleAnfragen(env) {
   return eintraege.filter(Boolean).sort((a, b) => b.eingang.localeCompare(a.eingang));
 }
 
-/* --- Anfragen und Zahlen ausliefern --- */
-async function daten(request, env, cors) {
-  const anfragen = await alleAnfragen(env);
+/* ============================================================
+   Angebote
 
-  const summe = (liste) => liste.reduce((s, a) => s + (a.angebot?.betrag || 0), 0);
-  const beauftragt = anfragen.filter((a) => a.status === "angenommen");
-  const bezahlt = anfragen.filter((a) => a.status === "bezahlt");
-  const offen = anfragen.filter((a) => a.status === "angebot");
+   Ein Angebot steht für sich. Es kann aus einer Anfrage entstehen, dann
+   merkt es sich deren Id, muss es aber nicht: Laufkundschaft, Empfehlungen
+   und Verlängerungen bekommen genauso ein Angebot, ohne dass jemand vorher
+   das Formular ausgefüllt hat.
+   ============================================================ */
+
+const ANGEBOT_STATUS = ["entwurf", "versendet", "angenommen", "abgelehnt", "bezahlt"];
+
+async function alleAngebote(env) {
+  const liste = await env.ANFRAGEN.list({ prefix: "angebot:", limit: 1000 });
+  const eintraege = await Promise.all(
+    liste.keys.map(async (k) => {
+      try {
+        return JSON.parse(await env.ANFRAGEN.get(k.name));
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return eintraege.filter(Boolean).sort((a, b) => b.erstelltAm.localeCompare(a.erstelltAm));
+}
+
+/** Fortlaufende Nummer im Format 2026-001, pro Jahr neu beginnend. */
+function naechsteNummer(angebote, jahr) {
+  const hoechste = angebote
+    .map((a) => String(a.nummer || ""))
+    .filter((n) => n.startsWith(`${jahr}-`))
+    .map((n) => Number(n.slice(5)))
+    .filter((n) => Number.isFinite(n))
+    .reduce((max, n) => Math.max(max, n), 0);
+  return `${jahr}-${String(hoechste + 1).padStart(3, "0")}`;
+}
+
+/** Rechnet Positionen, Rabatt und Steuer aus. Einzige Quelle für Beträge:
+    was der Browser schickt, wird nie geglaubt, sondern hier neu gerechnet. */
+function rechne(angebot) {
+  const netto = angebot.positionen.reduce((s, p) => s + p.menge * p.preis, 0);
+  const rabattBetrag = geld((netto * angebot.rabattProzent) / 100);
+  const nettoNachRabatt = geld(netto - rabattBetrag);
+  const ust = angebot.kleinunternehmer ? 0 : geld((nettoNachRabatt * angebot.ustSatz) / 100);
+  return {
+    netto: geld(netto),
+    rabattBetrag,
+    nettoNachRabatt,
+    ust,
+    gesamt: geld(nettoNachRabatt + ust),
+  };
+}
+
+function baueAngebot(daten, vorher, angebote) {
+  const jetzt = new Date().toISOString();
+  const positionen = (Array.isArray(daten.positionen) ? daten.positionen : [])
+    .slice(0, 40)
+    .map((p) => ({
+      text: text(p?.text, 300),
+      menge: menge(p?.menge),
+      einheit: text(p?.einheit, 20) || "Stk.",
+      preis: geld(p?.preis),
+    }))
+    .filter((p) => p.text || p.preis > 0);
+
+  const kleinunternehmer =
+    daten.kleinunternehmer === undefined
+      ? (vorher?.kleinunternehmer ?? KLEINUNTERNEHMER)
+      : daten.kleinunternehmer !== false;
+
+  const angebot = {
+    id: vorher?.id || `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+    nummer: vorher?.nummer || naechsteNummer(angebote, new Date().getFullYear()),
+    erstelltAm: vorher?.erstelltAm || jetzt,
+    aktualisiertAm: jetzt,
+    anfrageId: text(daten.anfrageId ?? vorher?.anfrageId, 80),
+    kunde: {
+      name: text(daten.kunde?.name, 120),
+      firma: text(daten.kunde?.firma, 160),
+      strasse: text(daten.kunde?.strasse, 160),
+      plz: text(daten.kunde?.plz, 12),
+      ort: text(daten.kunde?.ort, 120),
+      email: text(daten.kunde?.email, 160),
+      telefon: text(daten.kunde?.telefon, 60),
+    },
+    titel: text(daten.titel, 200),
+    einleitung: text(daten.einleitung, 3000),
+    positionen,
+    rabattProzent: Math.min(100, geld(daten.rabattProzent)),
+    rabattText: text(daten.rabattText, 200),
+    kleinunternehmer,
+    ustSatz: kleinunternehmer ? 0 : UST_SATZ,
+    gueltigBis: text(daten.gueltigBis, 40),
+    lieferzeit: text(daten.lieferzeit, 200),
+    zahlung: text(daten.zahlung, 1000),
+    hinweis: text(daten.hinweis, 3000),
+    notiz: text(daten.notiz, 4000),
+    status: ANGEBOT_STATUS.includes(daten.status) ? daten.status : vorher?.status || "entwurf",
+    versendetAm: vorher?.versendetAm || "",
+    angenommenAm: vorher?.angenommenAm || "",
+    bezahltAm: vorher?.bezahltAm || "",
+  };
+
+  /* Zeitstempel setzen, sobald ein Status das erste Mal erreicht wird.
+     So bleibt nachvollziehbar, wann etwas rausging und wann Geld kam. */
+  if (angebot.status === "versendet" && !angebot.versendetAm) angebot.versendetAm = jetzt;
+  if (angebot.status === "angenommen" && !angebot.angenommenAm) angebot.angenommenAm = jetzt;
+  if (angebot.status === "bezahlt" && !angebot.bezahltAm) angebot.bezahltAm = jetzt;
+
+  return { ...angebot, ...rechne(angebot) };
+}
+
+async function angebotAendern(request, env, cors) {
+  let daten;
+  try {
+    daten = await request.json();
+  } catch {
+    return jsonAntwort({ fehler: "Ungültige Anfrage." }, cors, 400);
+  }
+
+  const id = text(daten.id, 80);
+
+  if (daten.loeschen === true) {
+    if (!id) return jsonAntwort({ fehler: "Kein Angebot angegeben." }, cors, 400);
+    await env.ANFRAGEN.delete(`angebot:${id}`);
+    return jsonAntwort({ ok: true, geloescht: true }, cors);
+  }
+
+  let vorher = null;
+  if (id) {
+    const roh = await env.ANFRAGEN.get(`angebot:${id}`);
+    if (!roh) return jsonAntwort({ fehler: "Angebot nicht gefunden." }, cors, 404);
+    vorher = JSON.parse(roh);
+  }
+
+  if (daten.status !== undefined && !ANGEBOT_STATUS.includes(daten.status)) {
+    return jsonAntwort({ fehler: "Unbekannter Status." }, cors, 400);
+  }
+
+  const angebote = vorher ? [] : await alleAngebote(env);
+  const angebot = baueAngebot(daten, vorher, angebote);
+  await env.ANFRAGEN.put(`angebot:${angebot.id}`, JSON.stringify(angebot));
+
+  /* Hängt das Angebot an einer Anfrage, wandert deren Status mit, damit
+     die Anfragenliste nicht behauptet, da liege noch etwas unbearbeitet. */
+  if (angebot.anfrageId) {
+    const schluessel = `anfrage:${angebot.anfrageId}`;
+    const roh = await env.ANFRAGEN.get(schluessel);
+    if (roh) {
+      const anfrage = JSON.parse(roh);
+      const uebertrag = {
+        entwurf: "in_arbeit",
+        versendet: "angebot",
+        angenommen: "angenommen",
+        abgelehnt: "abgelehnt",
+        bezahlt: "bezahlt",
+      }[angebot.status];
+      if (uebertrag && anfrage.status !== uebertrag) {
+        anfrage.status = uebertrag;
+        await env.ANFRAGEN.put(schluessel, JSON.stringify(anfrage));
+      }
+    }
+  }
+
+  return jsonAntwort({ ok: true, angebot }, cors);
+}
+
+/* --- Antwort an den Kunden verschicken ---
+   Läuft über Resend, falls eingerichtet. Ist es das nicht, sagt der Worker
+   das klar, und im Browser bleibt der Weg über das Mailprogramm. */
+async function mailSenden(request, env, cors) {
+  if (!env.RESEND_KEY || !env.MAIL_VON) {
+    return jsonAntwort(
+      { fehler: "Der Mailversand ist nicht eingerichtet. Nimm so lange den Knopf, der dein Mailprogramm öffnet." },
+      cors,
+      501,
+    );
+  }
+
+  let daten;
+  try {
+    daten = await request.json();
+  } catch {
+    return jsonAntwort({ fehler: "Ungültige Anfrage." }, cors, 400);
+  }
+
+  const an = text(daten.an, 160);
+  const betreff = text(daten.betreff, 200);
+  const inhalt = text(daten.text, 20000);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(an) || !betreff || !inhalt) {
+    return jsonAntwort({ fehler: "Empfänger, Betreff oder Text fehlt." }, cors, 400);
+  }
+
+  try {
+    const antwort = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.MAIL_VON,
+        to: [an],
+        subject: betreff,
+        text: inhalt,
+        reply_to: env.MAIL_ANTWORT || ABSENDER.email,
+      }),
+    });
+    if (!antwort.ok) {
+      const grund = await antwort.text();
+      return jsonAntwort({ fehler: `Der Mailanbieter hat abgelehnt: ${grund.slice(0, 300)}` }, cors, 502);
+    }
+  } catch {
+    return jsonAntwort({ fehler: "Der Mailanbieter war nicht erreichbar." }, cors, 502);
+  }
+
+  return jsonAntwort({ ok: true }, cors);
+}
+
+/* --- Anfragen, Angebote und Zahlen ausliefern --- */
+async function daten(request, env, cors) {
+  const [anfragen, angebote] = await Promise.all([alleAnfragen(env), alleAngebote(env)]);
+
+  const summe = (liste) => geld(liste.reduce((s, a) => s + (a.gesamt || 0), 0));
+  const offen = angebote.filter((a) => a.status === "versendet");
+  const beauftragt = angebote.filter((a) => a.status === "angenommen");
+  const bezahlt = angebote.filter((a) => a.status === "bezahlt");
 
   /* Umsatz nach Monat, gezählt wird der Tag der Zahlung. */
   const proMonat = {};
   for (const a of bezahlt) {
-    const monat = (a.angebot?.bezahltAm || a.eingang).slice(0, 7);
-    proMonat[monat] = (proMonat[monat] || 0) + (a.angebot?.betrag || 0);
+    const monat = (a.bezahltAm || a.erstelltAm).slice(0, 7);
+    proMonat[monat] = geld((proMonat[monat] || 0) + (a.gesamt || 0));
   }
 
   return jsonAntwort(
     {
       anfragen,
+      angebote,
+      absender: ABSENDER,
+      einstellungen: {
+        kleinunternehmer: KLEINUNTERNEHMER,
+        ustSatz: UST_SATZ,
+        ustHinweis: UST_HINWEIS,
+        zahlungStandard: ZAHLUNG_STANDARD,
+        gueltigTage: GUELTIG_TAGE,
+        mailversand: Boolean(env.RESEND_KEY && env.MAIL_VON),
+      },
       zahlen: {
         neu: anfragen.filter((a) => a.status === "neu").length,
         inArbeit: anfragen.filter((a) => a.status === "in_arbeit").length,
+        anfragenGesamt: anfragen.length,
+        entwuerfe: angebote.filter((a) => a.status === "entwurf").length,
         angeboteOffen: offen.length,
         angeboteOffenSumme: summe(offen),
+        beauftragt: beauftragt.length,
         beauftragtSumme: summe(beauftragt),
         bezahltSumme: summe(bezahlt),
-        gesamt: anfragen.length,
+        angeboteGesamt: angebote.length,
         proMonat,
       },
     },
@@ -478,28 +793,9 @@ async function anfrageAendern(request, env, cors) {
       return jsonAntwort({ fehler: "Unbekannter Status." }, cors, 400);
     }
     eintrag.status = daten.status;
-    if (daten.status === "bezahlt") {
-      eintrag.angebot = eintrag.angebot || {};
-      eintrag.angebot.bezahltAm = new Date().toISOString();
-    }
   }
 
   if (daten.notiz !== undefined) eintrag.notiz = text(daten.notiz, 4000);
-
-  if (daten.angebot !== undefined) {
-    if (daten.angebot === null) {
-      eintrag.angebot = null;
-    } else {
-      const betrag = Number(daten.angebot.betrag);
-      eintrag.angebot = {
-        ...(eintrag.angebot || {}),
-        betrag: Number.isFinite(betrag) && betrag >= 0 ? Math.round(betrag * 100) / 100 : 0,
-        leistung: text(daten.angebot.leistung, 4000),
-        gueltigBis: text(daten.angebot.gueltigBis, 40),
-        erstelltAm: eintrag.angebot?.erstelltAm || new Date().toISOString(),
-      };
-    }
-  }
 
   if (daten.loeschen === true) {
     await env.ANFRAGEN.delete(schluessel);
@@ -515,7 +811,7 @@ async function anfrageAendern(request, env, cors) {
    ============================================================ */
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get("Origin");
     const cors = corsHeaders(origin, env);
 
@@ -530,7 +826,7 @@ export default {
     const pfad = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
 
     if (pfad === "/anfrage" && request.method === "POST") {
-      return anfrageSpeichern(request, env, cors);
+      return anfrageSpeichern(request, env, cors, ctx);
     }
     if (pfad === "/admin/login" && request.method === "POST") {
       return login(request, env, cors);
@@ -542,6 +838,8 @@ export default {
       }
       if (pfad === "/admin/daten" && request.method === "GET") return daten(request, env, cors);
       if (pfad === "/admin/anfrage" && request.method === "POST") return anfrageAendern(request, env, cors);
+      if (pfad === "/admin/angebot" && request.method === "POST") return angebotAendern(request, env, cors);
+      if (pfad === "/admin/mail" && request.method === "POST") return mailSenden(request, env, cors);
       return jsonAntwort({ fehler: "Unbekannter Aufruf." }, cors, 404);
     }
 

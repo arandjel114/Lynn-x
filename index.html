@@ -6,7 +6,7 @@
 <title>Lynq-x: Websites, die verkaufen. Nicht nur gut aussehen.</title>
 <meta name="description" content="Lynq-x baut handprogrammierte Websites und Marketing für Unternehmen und Privatpersonen, die Besucher zu Anfragen machen. Kein Baukasten, keine Vorlage.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-<link rel="stylesheet" href="css/style.css?v=24">
+<link rel="stylesheet" href="css/style.css?v=25">
 </head>
 <body class="is-loading">
 
@@ -508,6 +508,18 @@
         </fieldset>
 
         <fieldset class="quiz-step" data-step="6">
+          <legend class="quiz-q">Woran denkst du beim Budget?</legend>
+          <p class="quiz-hint">Grobe Richtung reicht. Sie hilft uns einzuschätzen, was in deinem Rahmen sinnvoll ist, bevor wir dir etwas vorschlagen, das nicht passt.</p>
+          <div class="quiz-options">
+            <label class="quiz-opt"><input type="radio" name="budget" value="Unter 1.000 Euro"><span>Unter 1.000 &euro;</span></label>
+            <label class="quiz-opt"><input type="radio" name="budget" value="1.000 bis 3.000 Euro"><span>1.000 bis 3.000 &euro;</span></label>
+            <label class="quiz-opt"><input type="radio" name="budget" value="3.000 bis 6.000 Euro"><span>3.000 bis 6.000 &euro;</span></label>
+            <label class="quiz-opt"><input type="radio" name="budget" value="Mehr als 6.000 Euro"><span>Mehr als 6.000 &euro;</span></label>
+            <label class="quiz-opt"><input type="radio" name="budget" value="Weiss ich noch nicht"><span>Wei&szlig; ich noch nicht</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="quiz-step" data-step="7">
           <legend class="quiz-q">Wie erreichen wir dich?</legend>
           <div class="form-row">
             <label for="name">Name</label>
@@ -536,6 +548,14 @@
         </div>
 
         <p class="form-note" id="formNote" role="status"></p>
+
+        <div class="quiz-fallback" id="quizFallback" hidden>
+          <p class="quiz-fallback-lead">Es hat sich kein E-Mail-Programm ge&ouml;ffnet? Dann kopier deine Anfrage hier und schick sie an <a href="mailto:kontakt-lynq-x@outlook.de">kontakt-lynq-x@outlook.de</a>.</p>
+          <label class="visually-hidden" for="quizSummary">Deine Anfrage zum Kopieren</label>
+          <textarea id="quizSummary" readonly rows="9"></textarea>
+          <button type="button" class="quiz-copy" id="quizCopy">Text kopieren</button>
+        </div>
+
         <p class="quiz-escape">Lieber direkt schreiben? <a href="mailto:kontakt-lynq-x@outlook.de">kontakt-lynq-x@outlook.de</a></p>
       </form>
     </div>
@@ -580,7 +600,7 @@
   </div>
 </footer>
 
-<script src="js/script.js?v=24"></script>
-<script src="js/assistant.js?v=24" defer></script>
+<script src="js/script.js?v=25"></script>
+<script src="js/assistant.js?v=25" defer></script>
 </body>
 </html>

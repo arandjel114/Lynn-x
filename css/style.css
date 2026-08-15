@@ -2535,3 +2535,60 @@ h1 .word:last-child {
 /* [hidden] setzt display:none nur im Browser-Standard. Jede eigene
    display-Regel schlaegt das, deshalb hier ausdruecklich. */
 .quiz-nav [hidden] { display: none !important; }
+
+.quiz-hint {
+  margin: -14px 0 22px;
+  font-size: .88rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+/* Auffangnetz, wenn kein Mailprogramm eingerichtet ist. */
+.quiz-fallback {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+}
+.quiz-fallback[hidden] { display: none !important; }
+.quiz-fallback-lead {
+  margin: 0 0 12px;
+  font-size: .88rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+.quiz-fallback-lead a {
+  color: var(--gold-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#quizSummary {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+  padding: 12px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: .88rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+#quizSummary:focus { outline: none; border-color: var(--gold); }
+.quiz-copy {
+  margin-top: 12px;
+  padding: 9px 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 40px;
+  background: transparent;
+  color: var(--gold-ink);
+  font: inherit;
+  font-size: .84rem;
+  cursor: pointer;
+  transition: transform .35s var(--ease), border-color .35s var(--ease), background .35s var(--ease), color .35s var(--ease);
+}
+.quiz-copy:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  background: rgba(198, 154, 44, .12);
+  color: var(--text);
+}

@@ -130,6 +130,7 @@ if (form) {
       `Ziel: ${antwort("ziel")}\n` +
       `Vorhanden: ${antwort("bestand")}\n` +
       `Zeitrahmen: ${antwort("zeit")}\n` +
+      `Budget: ${antwort("budget")}\n` +
       (nachricht ? `\nAnmerkung:\n${nachricht}\n` : "");
 
     window.location.href =
@@ -137,7 +138,33 @@ if (form) {
 
     formNote.textContent =
       "Dein E-Mail-Programm öffnet sich mit der fertigen Anfrage. Bitte dort auf Senden klicken.";
+
+    /* Nicht auf jedem Gerät ist ein Mailprogramm eingerichtet. Wer sonst vor
+       einer leeren Seite säße, kann die Anfrage hier kopieren. */
+    const fallback = document.getElementById("quizFallback");
+    const summary = document.getElementById("quizSummary");
+    if (fallback && summary) {
+      summary.value = body;
+      fallback.hidden = false;
+    }
   });
+
+  const copyBtn = document.getElementById("quizCopy");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      const summary = document.getElementById("quizSummary");
+      try {
+        await navigator.clipboard.writeText(summary.value);
+      } catch {
+        /* Ältere Browser und unsichere Verbindungen kennen die Zwischenablage
+           nicht. Dann wenigstens alles markieren. */
+        summary.select();
+        summary.setSelectionRange(0, summary.value.length);
+      }
+      copyBtn.textContent = "Kopiert";
+      window.setTimeout(() => { copyBtn.textContent = "Text kopieren"; }, 2200);
+    });
+  }
 
   render();
 }

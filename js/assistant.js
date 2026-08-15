@@ -136,11 +136,14 @@
     {
       id: "wer",
       keys: ["wer bist du", "wer seid ihr", "über euch", "team", "agentur", "lynq", "was ist lynq", "arandjel", "regi", "wie viele seid", "mitarbeiter"],
-      answer: `Wir sind eine Webdesign- und Marketingagentur aus Köln, zu zweit und mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> (Gründer) macht Design und Umsetzung, <strong>Regi Amoako</strong> (Partner) kümmert sich um Marketing und Strategie.<br><br>Bei uns laufen nicht dreißig Projekte parallel. Deins bekommt entsprechend Aufmerksamkeit. ${link("#ueber-uns", "Mehr über uns")}`,
+      answer: `Wir sind eine Webdesign- und Marketingagentur aus Köln, zu zweit und mit klarer Aufteilung: <strong>Arandjel Jovanovic</strong> macht Design und Umsetzung, <strong>Regi Amoako</strong> kümmert sich um Marketing und Strategie.<br><br>Lynq-x ist dabei das Einzelunternehmen von Arandjel Jovanovic. Bei uns laufen nicht dreißig Projekte parallel, deins bekommt entsprechend Aufmerksamkeit. ${link("#ueber-uns", "Mehr über uns")}`,
       chips: ["Habt ihr Referenzen?", "Wie läuft ein Projekt ab?"]
     },
     {
       id: "firma",
+      /* Doppelt gewichtet: "Wem gehört Lynq-x?" ist eine Frage nach dem
+         Unternehmen, nicht nach dem Eigentum an der fertigen Website. */
+      weight: 2,
       keys: ["firma", "unternehmen heißt", "project x", "gewerbe", "rechnung", "vertragspartner", "steuernummer", "handelsregister", "wem gehört lynq", "impressum"],
       answer: `Lynq-x ist unser Markenname. Das angemeldete Gewerbe dahinter heißt <strong>Project X Marketing Solution</strong>, Inhaber ist Arandjel Jovanovic.<br><br>Auf Rechnungen und in Verträgen steht deshalb Project X Marketing Solution. Alle Angaben stehen im <a href="impressum.html">Impressum</a>.`,
       chips: ["Wer seid ihr?", "Wie erreiche ich euch?"]

@@ -2364,3 +2364,15 @@ h1 .word:last-child {
   color: var(--text-dim);
   opacity: .85;
 }
+
+/* Strukturhinweis im Team-Abschnitt: sachlich, nicht werblich. */
+.team-structure {
+  max-width: 62ch;
+  margin: clamp(30px, 4vw, 46px) auto 0;
+  text-align: center;
+  font-size: .86rem;
+  line-height: 1.7;
+  color: var(--text-dim);
+  opacity: .88;
+}
+.team-structure + .team-note { margin-top: 14px; }

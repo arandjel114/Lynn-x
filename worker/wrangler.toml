@@ -16,6 +16,13 @@ binding = "AI"
 [vars]
 ALLOWED_ORIGINS = "https://lynq-x.de,https://www.lynq-x.de"
 
+# Mitschreiben, was der Worker tut. Sonst steht man bei einem Fehler ohne
+# Anhaltspunkt da. Gehoert hierher, sonst schaltet der naechste Deploy es
+# wieder ab.
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 # Speicher fuer Anfragen, Angebote und Sitzungen des internen Bereichs.
 # Ohne diesen Speicher laeuft der Chat weiter, aber admin.html bleibt leer.
 # Die id gehoert hier fest hinein: bei einem Deploy aus Git ist diese Datei

@@ -34,6 +34,10 @@
   const monthsEl = el("months");
   const refreshBtn = el("refreshBtn");
   const neuBtn = el("neuBtn");
+  const listRechnungenEl = el("listRechnungen");
+  const filterRechnungenEl = el("filterRechnungen");
+  const neuRechnungBtn = el("neuRechnungBtn");
+  const steuerWarnung = el("steuerWarnung");
 
   const STATUS = {
     neu: "Neu",
@@ -52,6 +56,13 @@
     bezahlt: "Bezahlt",
   };
 
+  const R_STATUS = {
+    entwurf: "Entwurf",
+    offen: "Gestellt",
+    bezahlt: "Bezahlt",
+    storniert: "Storniert",
+  };
+
   let token = sessionStorage.getItem("lynqx_token") || "";
   let anfragen = [];
   let angebote = [];
@@ -60,8 +71,12 @@
   let filterAnfragen = "alle";
   let filterAngebote = "alle";
   let offeneAnfrage = null;
+  let rechnungen = [];
+  let filterRechnungen = "alle";
   let offenesAngebot = null;
+  let offeneRechnung = null;
   let entwurf = null; // ein noch nicht gespeichertes neues Angebot
+  let rechnungEntwurf = null; // dito für Rechnungen
 
   const euro = (n) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(n || 0);
   const euroKurz = (n) =>
@@ -158,6 +173,7 @@
     });
     el("panelAnfragen").hidden = knopf.dataset.tab !== "anfragen";
     el("panelAngebote").hidden = knopf.dataset.tab !== "angebote";
+    el("panelRechnungen").hidden = knopf.dataset.tab !== "rechnungen";
   });
 
   const zeigeReiter = (name) => document.querySelector(`[data-tab="${name}"]`).click();
@@ -170,16 +186,21 @@
       const daten = await api("/admin/daten");
       anfragen = daten.anfragen || [];
       angebote = daten.angebote || [];
+      rechnungen = daten.rechnungen || [];
       absender = daten.absender || {};
       einstellungen = daten.einstellungen || {};
+      zeigeSteuerWarnung();
       zeichneStats(daten.zahlen);
       zeichneFilter();
       zeichneListe();
       zeichneAngebotFilter();
       zeichneAngebotListe();
+      zeichneRechnungFilter();
+      zeichneRechnungListe();
       zeichneMonate(daten.zahlen.proMonat);
       el("tabAnfragenZahl").textContent = anfragen.length;
       el("tabAngeboteZahl").textContent = angebote.length;
+      el("tabRechnungenZahl").textContent = rechnungen.length;
     } catch (fehler) {
       if (fehler.message !== "abgelaufen") {
         listEl.innerHTML = `<p class="admin-leer">${esc(fehler.message)}</p>`;
@@ -190,24 +211,45 @@
   refreshBtn.addEventListener("click", laden);
 
   function zeichneStats(z) {
-    const kacheln = [
+    const kachel = ([titel, zahl, betrag, klasse]) => `
+      <div class="admin-stat${klasse ? " " + klasse : ""}">
+        <span class="admin-stat-label">${titel}</span>
+        <strong class="admin-stat-wert">${zahl !== "" ? zahl : betrag}</strong>
+        ${zahl !== "" && betrag ? `<span class="admin-stat-neben">${betrag}</span>` : ""}
+      </div>`;
+
+    /* Zwei Blöcke: was noch unterwegs ist, und was schon Geld ist. */
+    const pipeline = [
       ["Neue Anfragen", z.neu, ""],
       ["In Arbeit", z.inArbeit, ""],
-      ["Entwürfe", z.entwuerfe, ""],
       ["Angebote offen", z.angeboteOffen, euroKurz(z.angeboteOffenSumme)],
       ["Beauftragt", z.beauftragt, euroKurz(z.beauftragtSumme)],
+    ];
+    const umsatz = [
+      ["Rechnungen offen", z.rechnungOffen, euroKurz(z.rechnungOffenSumme)],
+      ["Überfällig", z.ueberfaellig, euroKurz(z.ueberfaelligSumme), z.ueberfaellig ? "is-warnung" : ""],
       ["Bezahlt", "", euroKurz(z.bezahltSumme)],
     ];
-    statsEl.innerHTML = kacheln
-      .map(
-        ([titel, zahl, betrag]) => `
-        <div class="admin-stat">
-          <span class="admin-stat-label">${titel}</span>
-          <strong class="admin-stat-wert">${zahl !== "" ? zahl : betrag}</strong>
-          ${zahl !== "" && betrag ? `<span class="admin-stat-neben">${betrag}</span>` : ""}
-        </div>`,
-      )
-      .join("");
+
+    statsEl.innerHTML =
+      `<div class="admin-statblock">
+         <p class="admin-statblock-titel">Pipeline</p>
+         <div class="admin-statreihe">${pipeline.map(kachel).join("")}</div>
+       </div>
+       <div class="admin-statblock">
+         <p class="admin-statblock-titel">Umsatz</p>
+         <div class="admin-statreihe">${umsatz.map(kachel).join("")}</div>
+       </div>`;
+  }
+
+  function zeigeSteuerWarnung() {
+    const fehlt = !einstellungen.steuernummer && !einstellungen.ustId;
+    steuerWarnung.hidden = !fehlt;
+    if (fehlt) {
+      steuerWarnung.textContent =
+        "Auf Rechnungen fehlt noch deine Steuernummer. Ohne sie ist eine Rechnung nach § 14 UStG unvollständig. " +
+        "Trag sie in worker.js bei STEUERNUMMER ein, dann steht sie auf jeder Rechnung.";
+    }
   }
 
   function zeichneMonate(proMonat) {
@@ -602,6 +644,7 @@
           <button type="button" class="admin-kopieren" data-akopieren="${esc(k)}">Text kopieren</button>
           ${einstellungen.mailversand ? `<button type="button" class="admin-kopieren" data-amailen="${esc(k)}">Direkt senden</button>` : ""}
           <button type="button" class="admin-kopieren" data-amailprog="${esc(k)}">Im Mailprogramm öffnen</button>
+          ${istEntwurf ? "" : `<button type="button" class="admin-speichern" data-rechnung-aus="${esc(k)}">Rechnung daraus schreiben</button>`}
           <button type="button" class="admin-loeschen" data-aloeschen="${esc(k)}">${istEntwurf ? "Verwerfen" : "Löschen"}</button>
           <span class="admin-hinweis" data-hinweis="${esc(k)}"></span>
         </div>
@@ -756,6 +799,9 @@
       return;
     }
 
+    const rausRechnung = event.target.closest("[data-rechnung-aus]");
+    if (rausRechnung) return rechnungAusAngebot(rausRechnung.dataset.rechnungAus);
+
     const mailen = event.target.closest("[data-amailen]");
     if (mailen) return sendeAngebot(mailen.dataset.amailen);
 
@@ -888,6 +934,504 @@
 
     zeilen.push(a.hinweis || "Melde dich einfach, wenn du Fragen hast oder starten möchtest.", "");
     zeilen.push("Viele Grüße", absender.inhaber || "", absender.firma || "", absender.telefon || "", absender.web || "");
+
+    return zeilen.filter((z, i, arr) => !(z === "" && arr[i - 1] === "")).join("\n");
+  }
+
+
+  /* ============================================================
+     Rechnungen
+
+     Anders als beim Angebot ist eine gestellte Rechnung nicht mehr
+     aenderbar. Das ist Absicht: eine fortlaufende Nummer, die sich
+     nachtraeglich anders liest, waere gegenueber dem Finanzamt nicht
+     nachvollziehbar. Korrigieren heisst stornieren und neu schreiben.
+     ============================================================ */
+
+  function leereRechnung(quelle) {
+    const heute = new Date().toISOString().slice(0, 10);
+    return {
+      id: "",
+      nummer: "neu",
+      status: "entwurf",
+      angebotId: quelle?.id || "",
+      anfrageId: quelle?.anfrageId || "",
+      erstelltAm: new Date().toISOString(),
+      datum: heute,
+      leistungszeitraum: "",
+      zahlungsziel: inTagen(einstellungen.zahlungszielTage || 14),
+      kunde: quelle
+        ? { ...quelle.kunde }
+        : { name: "", firma: "", strasse: "", plz: "", ort: "", email: "" },
+      titel: quelle?.titel || "",
+      einleitung: "vielen Dank für den Auftrag. Wie besprochen stelle ich folgende Leistungen in Rechnung.",
+      positionen: quelle?.positionen?.length
+        ? quelle.positionen.map((p) => ({ ...p }))
+        : [{ text: "", menge: 1, einheit: "Stk.", preis: 0 }],
+      rabattProzent: quelle?.rabattProzent || 0,
+      rabattText: quelle?.rabattText || "",
+      kleinunternehmer: quelle ? quelle.kleinunternehmer : einstellungen.kleinunternehmer !== false,
+      ustSatz: einstellungen.ustSatz || 19,
+      zahlung: einstellungen.zahlungRechnung || "",
+      hinweis: "",
+      notiz: "",
+      netto: 0,
+      rabattBetrag: 0,
+      nettoNachRabatt: 0,
+      ust: 0,
+      gesamt: 0,
+    };
+  }
+
+  neuRechnungBtn.addEventListener("click", () => {
+    rechnungEntwurf = leereRechnung(null);
+    offeneRechnung = "entwurf";
+    zeichneRechnungListe();
+    zeigeReiter("rechnungen");
+  });
+
+  function rechnungAusAngebot(angebotId) {
+    const a = angebote.find((x) => x.id === angebotId);
+    if (!a) return;
+    rechnungEntwurf = leereRechnung(a);
+    offeneRechnung = "entwurf";
+    zeichneRechnungListe();
+    zeigeReiter("rechnungen");
+  }
+
+  function zeichneRechnungFilter() {
+    const zaehler = (s) => (s === "alle" ? rechnungen.length : rechnungen.filter((r) => r.status === s).length);
+    filterRechnungenEl.innerHTML = [["alle", "Alle"], ...Object.entries(R_STATUS)]
+      .map(
+        ([w, t]) =>
+          `<button type="button" class="admin-chip${w === filterRechnungen ? " is-active" : ""}" data-rfilter="${w}">${t} <span>${zaehler(w)}</span></button>`,
+      )
+      .join("");
+  }
+
+  filterRechnungenEl.addEventListener("click", (event) => {
+    const knopf = event.target.closest("[data-rfilter]");
+    if (!knopf) return;
+    filterRechnungen = knopf.dataset.rfilter;
+    zeichneRechnungFilter();
+    zeichneRechnungListe();
+  });
+
+  function zeichneRechnungListe() {
+    const sichtbar = filterRechnungen === "alle" ? rechnungen : rechnungen.filter((r) => r.status === filterRechnungen);
+    const teile = [];
+    if (rechnungEntwurf) teile.push(rechnungHtml(rechnungEntwurf, true));
+    teile.push(...sichtbar.map((r) => rechnungHtml(r, false)));
+    listRechnungenEl.innerHTML = teile.length
+      ? teile.join("")
+      : '<p class="admin-leer">Noch keine Rechnung. Über „Neue Rechnung“ legst du eine an, oder du machst aus einem Angebot eine.</p>';
+  }
+
+  const heuteIso = () => new Date().toISOString().slice(0, 10);
+
+  function rechnungHtml(r, istEntwurf) {
+    const k = istEntwurf ? "entwurf" : r.id;
+    const offen = k === offeneRechnung;
+    const spaet = r.status === "offen" && r.zahlungsziel && r.zahlungsziel < heuteIso();
+    return `
+      <article class="admin-item${offen ? " is-open" : ""}">
+        <button type="button" class="admin-item-head" data-rtoggle="${esc(k)}" aria-expanded="${offen}">
+          <span class="admin-item-datum">${istEntwurf ? "neu" : esc(r.nummer)}</span>
+          <span class="admin-item-name">${esc(r.kunde.firma || r.kunde.name || "ohne Namen")}</span>
+          <span class="admin-item-projekt">${esc(r.titel || "ohne Titel")}${spaet ? " · überfällig" : ""}</span>
+          <span class="admin-badge admin-badge-${esc(r.status)}${spaet ? " is-warnung" : ""}">${R_STATUS[r.status] || r.status}</span>
+          <span class="admin-item-betrag">${euroKurz(r.gesamt)}</span>
+        </button>
+        ${offen ? rechnungDetailHtml(r, k, istEntwurf) : ""}
+      </article>`;
+  }
+
+  function rechnungDetailHtml(r, k, istEntwurf) {
+    const gestellt = !istEntwurf && r.status !== "entwurf";
+    const pos = r.positionen.length ? r.positionen : [{ text: "", menge: 1, einheit: "Stk.", preis: 0 }];
+
+    /* Ist die Rechnung raus, wird nichts mehr zum Bearbeiten angeboten.
+       Dann zeigt die Ansicht nur noch den fertigen Text und den Status. */
+    if (gestellt) {
+      return `
+        <div class="admin-item-body" data-reditor="${esc(k)}">
+          <p class="admin-fussnote">Diese Rechnung ist gestellt und lässt sich nicht mehr ändern. Zum Korrigieren stornieren und eine neue schreiben.</p>
+          <pre class="admin-vorschau">${esc(rechnungText(r))}</pre>
+          <div class="admin-aktionen">
+            <label class="admin-select">
+              <span>Status</span>
+              <select data-rstatus="${esc(k)}">
+                ${Object.entries(R_STATUS)
+                  .map(([w, t]) => `<option value="${w}"${r.status === w ? " selected" : ""}>${t}</option>`)
+                  .join("")}
+              </select>
+            </label>
+          </div>
+          <div class="admin-angebot-nav">
+            <button type="button" class="admin-kopieren" data-rkopieren="${esc(k)}">Text kopieren</button>
+            ${einstellungen.mailversand ? `<button type="button" class="admin-kopieren" data-rmailen="${esc(k)}">Direkt senden</button>` : ""}
+            <button type="button" class="admin-kopieren" data-rmailprog="${esc(k)}">Im Mailprogramm öffnen</button>
+            <button type="button" class="admin-loeschen" data-rloeschen="${esc(k)}">Löschen</button>
+            <span class="admin-hinweis" data-hinweis="${esc(k)}"></span>
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="admin-item-body" data-reditor="${esc(k)}">
+
+        <h3 class="admin-h3">Kunde</h3>
+        <div class="admin-angebot-felder">
+          <label class="form-row"><span>Name</span><input type="text" data-rk-name="${esc(k)}" value="${esc(r.kunde.name)}"></label>
+          <label class="form-row"><span>Firma</span><input type="text" data-rk-firma="${esc(k)}" value="${esc(r.kunde.firma)}"></label>
+        </div>
+        <div class="admin-angebot-felder">
+          <label class="form-row"><span>Straße und Nummer</span><input type="text" data-rk-strasse="${esc(k)}" value="${esc(r.kunde.strasse)}"></label>
+          <label class="form-row"><span>E-Mail</span><input type="email" data-rk-email="${esc(k)}" value="${esc(r.kunde.email)}"></label>
+        </div>
+        <div class="admin-angebot-felder">
+          <label class="form-row"><span>PLZ</span><input type="text" data-rk-plz="${esc(k)}" value="${esc(r.kunde.plz)}"></label>
+          <label class="form-row"><span>Ort</span><input type="text" data-rk-ort="${esc(k)}" value="${esc(r.kunde.ort)}"></label>
+        </div>
+
+        <h3 class="admin-h3">Rechnung</h3>
+        <div class="admin-angebot-felder">
+          <label class="form-row"><span>Rechnungsdatum</span><input type="date" data-rdatum="${esc(k)}" value="${esc(r.datum)}"></label>
+          <label class="form-row"><span>Zahlungsziel</span><input type="date" data-rziel="${esc(k)}" value="${esc(r.zahlungsziel)}"></label>
+        </div>
+        <label class="form-row">
+          <span>Zeitpunkt der Leistung</span>
+          <input type="text" data-rzeitraum="${esc(k)}" value="${esc(r.leistungszeitraum)}" placeholder="z. B. August 2026 oder 12.08.2026">
+        </label>
+        <label class="form-row"><span>Betreff</span><input type="text" data-rtitel="${esc(k)}" value="${esc(r.titel)}" placeholder="z. B. Website und Bestellsystem"></label>
+        <label class="form-row"><span>Einleitung</span><textarea rows="2" data-reinleitung="${esc(k)}">${esc(r.einleitung)}</textarea></label>
+
+        <div class="admin-pos-kopf" aria-hidden="true">
+          <span>Leistung</span><span>Menge</span><span>Einheit</span><span>Preis</span><span>Summe</span><span></span>
+        </div>
+        <div class="admin-positionen">
+          ${pos.map((p) => rechnungPositionHtml(k, p)).join("")}
+        </div>
+        <button type="button" class="admin-kopieren admin-pos-plus" data-rpos-plus="${esc(k)}">Position hinzufügen</button>
+
+        <div class="admin-angebot-felder">
+          <label class="form-row"><span>Rabatt in Prozent</span><input type="number" min="0" max="100" step="1" data-rrabatt="${esc(k)}" value="${r.rabattProzent || ""}" placeholder="0"></label>
+          <label class="form-row"><span>Grund für den Rabatt</span><input type="text" data-rrabatttext="${esc(k)}" value="${esc(r.rabattText)}"></label>
+        </div>
+
+        <div class="admin-summe" data-rsumme="${esc(k)}">${summeHtml(r)}</div>
+
+        <label class="form-row"><span>Zahlungsbedingung</span><textarea rows="2" data-rzahlung="${esc(k)}">${esc(r.zahlung)}</textarea></label>
+        <label class="form-row"><span>Schlusswort</span><textarea rows="2" data-rschluss="${esc(k)}" placeholder="Optional">${esc(r.hinweis)}</textarea></label>
+        <label class="form-row"><span>Interne Notiz</span><textarea rows="2" data-rnotiz="${esc(k)}" placeholder="Nur für dich">${esc(r.notiz)}</textarea></label>
+
+        <div class="admin-aktionen">
+          <label class="admin-select">
+            <span>Umsatzsteuer</span>
+            <select data-rust="${esc(k)}">
+              <option value="klein"${r.kleinunternehmer ? " selected" : ""}>Keine, § 19 UStG</option>
+              <option value="voll"${!r.kleinunternehmer ? " selected" : ""}>19 % ausweisen</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="admin-angebot-nav">
+          <button type="button" class="admin-speichern" data-rspeichern="${esc(k)}">Entwurf speichern</button>
+          <button type="button" class="admin-speichern" data-rstellen="${esc(k)}">Rechnung stellen</button>
+          <button type="button" class="admin-kopieren" data-rkopieren="${esc(k)}">Text kopieren</button>
+          <button type="button" class="admin-loeschen" data-rloeschen="${esc(k)}">${istEntwurf ? "Verwerfen" : "Löschen"}</button>
+          <span class="admin-hinweis" data-hinweis="${esc(k)}"></span>
+        </div>
+        <p class="admin-fussnote">„Rechnung stellen“ vergibt die endgültige Nummer und friert den Inhalt ein. Danach ist nur noch der Status änderbar.</p>
+      </div>`;
+  }
+
+  function rechnungPositionHtml(k, p) {
+    return `
+      <div class="admin-pos">
+        <input type="text" data-rp-text="${esc(k)}" value="${esc(p.text)}" placeholder="Was wurde geleistet?">
+        <input type="number" min="0" step="0.5" data-rp-menge="${esc(k)}" value="${p.menge}" aria-label="Menge">
+        <input type="text" data-rp-einheit="${esc(k)}" value="${esc(p.einheit || "Stk.")}" aria-label="Einheit">
+        <input type="number" min="0" step="10" data-rp-preis="${esc(k)}" value="${p.preis || ""}" placeholder="0" aria-label="Einzelpreis">
+        <span class="admin-pos-summe">${euro((Number(p.menge) || 0) * (Number(p.preis) || 0))}</span>
+        <button type="button" class="admin-pos-weg" data-rpos-weg="${esc(k)}" aria-label="Position entfernen">×</button>
+      </div>`;
+  }
+
+  function leseRechnungEditor(k) {
+    const wurzel = listRechnungenEl.querySelector(`[data-reditor="${CSS.escape(k)}"]`);
+    const w = (attr) => wurzel.querySelector(`[data-${attr}]`)?.value ?? "";
+    const alle = (attr) => [...wurzel.querySelectorAll(`[data-${attr}]`)].map((e) => e.value);
+    const texte = alle("rp-text");
+    const mengen = alle("rp-menge");
+    const einheiten = alle("rp-einheit");
+    const preise = alle("rp-preis");
+
+    return {
+      kunde: {
+        name: w("rk-name"),
+        firma: w("rk-firma"),
+        strasse: w("rk-strasse"),
+        plz: w("rk-plz"),
+        ort: w("rk-ort"),
+        email: w("rk-email"),
+      },
+      datum: w("rdatum"),
+      zahlungsziel: w("rziel"),
+      leistungszeitraum: w("rzeitraum"),
+      titel: w("rtitel"),
+      einleitung: w("reinleitung"),
+      positionen: texte.map((t, i) => ({
+        text: t,
+        menge: Number(mengen[i]) || 0,
+        einheit: einheiten[i] || "Stk.",
+        preis: Number(preise[i]) || 0,
+      })),
+      rabattProzent: Number(w("rrabatt")) || 0,
+      rabattText: w("rrabatttext"),
+      kleinunternehmer: w("rust") !== "voll",
+      zahlung: w("rzahlung"),
+      hinweis: w("rschluss"),
+      notiz: w("rnotiz"),
+    };
+  }
+
+  const rstand = (k) => {
+    const roh = k === "entwurf" ? rechnungEntwurf : rechnungen.find((x) => x.id === k);
+    if (roh && roh.status !== "entwurf") return roh;
+    return { ...roh, ...rechneAnzeige(leseRechnungEditor(k)) };
+  };
+
+  listRechnungenEl.addEventListener("input", (event) => {
+    const editor = event.target.closest("[data-reditor]");
+    if (!editor || !editor.querySelector("[data-rsumme]")) return;
+    const jetzt = rechneAnzeige(leseRechnungEditor(editor.dataset.reditor));
+    editor.querySelector("[data-rsumme]").innerHTML = summeHtml(jetzt);
+    const zeile = event.target.closest(".admin-pos");
+    if (zeile) {
+      const i = [...editor.querySelectorAll(".admin-pos")].indexOf(zeile);
+      const p = jetzt.positionen[i];
+      if (p) zeile.querySelector(".admin-pos-summe").textContent = euro(p.menge * p.preis);
+    }
+  });
+
+  listRechnungenEl.addEventListener("change", async (event) => {
+    if (event.target.closest("[data-rust]")) {
+      const editor = event.target.closest("[data-reditor]");
+      editor.querySelector("[data-rsumme]").innerHTML = summeHtml(rechneAnzeige(leseRechnungEditor(editor.dataset.reditor)));
+      return;
+    }
+    const auswahl = event.target.closest("[data-rstatus]");
+    if (!auswahl) return;
+    try {
+      await api("/admin/rechnung", {
+        method: "POST",
+        body: JSON.stringify({ id: auswahl.dataset.rstatus, status: auswahl.value }),
+      });
+      await laden();
+    } catch (fehler) {
+      hinweis(listRechnungenEl, auswahl.dataset.rstatus, fehler.message);
+    }
+  });
+
+  listRechnungenEl.addEventListener("click", async (event) => {
+    const kopf = event.target.closest("[data-rtoggle]");
+    if (kopf) {
+      offeneRechnung = offeneRechnung === kopf.dataset.rtoggle ? null : kopf.dataset.rtoggle;
+      zeichneRechnungListe();
+      return;
+    }
+
+    const plus = event.target.closest("[data-rpos-plus]");
+    if (plus) {
+      const k = plus.dataset.rposPlus;
+      const jetzt = leseRechnungEditor(k);
+      jetzt.positionen.push({ text: "", menge: 1, einheit: "Stk.", preis: 0 });
+      uebernimmRechnung(k, jetzt);
+      return;
+    }
+
+    const weg = event.target.closest("[data-rpos-weg]");
+    if (weg) {
+      const k = weg.dataset.rposWeg;
+      const editor = weg.closest("[data-reditor]");
+      const i = [...editor.querySelectorAll(".admin-pos")].indexOf(weg.closest(".admin-pos"));
+      const jetzt = leseRechnungEditor(k);
+      jetzt.positionen.splice(i, 1);
+      if (!jetzt.positionen.length) jetzt.positionen.push({ text: "", menge: 1, einheit: "Stk.", preis: 0 });
+      uebernimmRechnung(k, jetzt);
+      return;
+    }
+
+    const speichern = event.target.closest("[data-rspeichern]");
+    if (speichern) return speichereRechnung(speichern.dataset.rspeichern, "entwurf");
+
+    const stellen = event.target.closest("[data-rstellen]");
+    if (stellen) {
+      if (!window.confirm("Rechnung jetzt stellen? Danach lässt sie sich nicht mehr ändern, nur noch stornieren.")) return;
+      return speichereRechnung(stellen.dataset.rstellen, "offen");
+    }
+
+    const kopieren = event.target.closest("[data-rkopieren]");
+    if (kopieren) {
+      const k = kopieren.dataset.rkopieren;
+      const text = rechnungText(rstand(k));
+      try {
+        await navigator.clipboard.writeText(text);
+        hinweis(listRechnungenEl, k, "Text kopiert");
+      } catch {
+        window.prompt("Rechnungstext (mit Strg+C kopieren):", text);
+      }
+      return;
+    }
+
+    const mailen = event.target.closest("[data-rmailen]");
+    if (mailen) {
+      const k = mailen.dataset.rmailen;
+      const r = rstand(k);
+      if (!r.kunde.email) return hinweis(listRechnungenEl, k, "Ohne E-Mail-Adresse geht das nicht.");
+      hinweis(listRechnungenEl, k, "Wird gesendet…");
+      try {
+        await api("/admin/mail", {
+          method: "POST",
+          body: JSON.stringify({ an: r.kunde.email, betreff: rechnungBetreff(r), text: rechnungText(r) }),
+        });
+        hinweis(listRechnungenEl, k, "Gesendet");
+      } catch (fehler) {
+        hinweis(listRechnungenEl, k, fehler.message);
+      }
+      return;
+    }
+
+    const mailprog = event.target.closest("[data-rmailprog]");
+    if (mailprog) {
+      const r = rstand(mailprog.dataset.rmailprog);
+      window.location.href =
+        `mailto:${encodeURIComponent(r.kunde.email || "")}` +
+        `?subject=${encodeURIComponent(rechnungBetreff(r))}` +
+        `&body=${encodeURIComponent(rechnungText(r))}`;
+      return;
+    }
+
+    const loeschen = event.target.closest("[data-rloeschen]");
+    if (loeschen) {
+      const k = loeschen.dataset.rloeschen;
+      if (k === "entwurf") {
+        rechnungEntwurf = null;
+        offeneRechnung = null;
+        zeichneRechnungListe();
+        return;
+      }
+      if (!window.confirm("Diese Rechnung wirklich löschen?")) return;
+      await api("/admin/rechnung", { method: "POST", body: JSON.stringify({ id: k, loeschen: true }) });
+      offeneRechnung = null;
+      await laden();
+    }
+  });
+
+  function uebernimmRechnung(k, jetzt) {
+    const voll = rechneAnzeige(jetzt);
+    if (k === "entwurf") {
+      rechnungEntwurf = { ...rechnungEntwurf, ...voll };
+    } else {
+      const i = rechnungen.findIndex((x) => x.id === k);
+      if (i >= 0) rechnungen[i] = { ...rechnungen[i], ...voll };
+    }
+    zeichneRechnungListe();
+  }
+
+  async function speichereRechnung(k, status) {
+    const jetzt = leseRechnungEditor(k);
+    if (!jetzt.kunde.name && !jetzt.kunde.firma) {
+      return hinweis(listRechnungenEl, k, "Name oder Firma fehlt.");
+    }
+    if (status === "offen" && !jetzt.leistungszeitraum) {
+      return hinweis(listRechnungenEl, k, "Der Zeitpunkt der Leistung fehlt, der ist Pflicht.");
+    }
+    hinweis(listRechnungenEl, k, "Wird gespeichert…");
+    try {
+      const antwort = await api("/admin/rechnung", {
+        method: "POST",
+        body: JSON.stringify({
+          ...jetzt,
+          status,
+          id: k === "entwurf" ? "" : k,
+          angebotId: k === "entwurf" ? rechnungEntwurf?.angebotId || "" : undefined,
+          anfrageId: k === "entwurf" ? rechnungEntwurf?.anfrageId || "" : undefined,
+        }),
+      });
+      rechnungEntwurf = null;
+      offeneRechnung = antwort.rechnung.id;
+      await laden();
+      hinweis(listRechnungenEl, antwort.rechnung.id, `Gespeichert als ${antwort.rechnung.nummer}`);
+    } catch (fehler) {
+      hinweis(listRechnungenEl, k, fehler.message);
+    }
+  }
+
+  const rechnungBetreff = (r) =>
+    `Rechnung ${r.nummer && r.nummer !== "neu" ? r.nummer + " " : ""}von Lynq-x${r.titel ? ": " + r.titel : ""}`;
+
+  /** Der fertige Rechnungstext mit allen Pflichtangaben nach § 14 UStG. */
+  function rechnungText(r) {
+    const kunde = r.kunde || {};
+    const zeilen = [];
+    const e = einstellungen;
+
+    zeilen.push(absender.firma || "Lynq-x");
+    if (absender.zusatz) zeilen.push(absender.zusatz);
+    zeilen.push(absender.inhaber || "", absender.strasse || "", absender.ort || "");
+    zeilen.push(`${absender.telefon || ""}  ·  ${absender.email || ""}`);
+    if (e.steuernummer) zeilen.push(`Steuernummer: ${e.steuernummer}`);
+    if (e.ustId) zeilen.push(`USt-IdNr.: ${e.ustId}`);
+    zeilen.push("");
+
+    if (kunde.firma || kunde.name) {
+      zeilen.push(kunde.firma || "", kunde.name || "", kunde.strasse || "", `${kunde.plz || ""} ${kunde.ort || ""}`.trim(), "");
+    }
+
+    zeilen.push(`Rechnung${r.nummer && r.nummer !== "neu" ? " " + r.nummer : ""}`);
+    zeilen.push(`Rechnungsdatum: ${datum(r.datum)}`);
+    if (r.leistungszeitraum) zeilen.push(`Zeitpunkt der Leistung: ${r.leistungszeitraum}`);
+    zeilen.push("");
+
+    if (r.titel) zeilen.push(r.titel, "");
+    if (kunde.name) zeilen.push(`Hallo ${kunde.name.split(" ")[0]},`, "");
+    if (r.einleitung) zeilen.push(r.einleitung, "");
+
+    zeilen.push("Leistungen");
+    for (const p of r.positionen.filter((p) => p.text || p.preis)) {
+      zeilen.push(`  ${p.text}`);
+      zeilen.push(`    ${p.menge} ${p.einheit} × ${euro(p.preis)}   =   ${euro(p.menge * p.preis)}`);
+    }
+    zeilen.push("");
+
+    zeilen.push(`Netto:  ${euro(r.netto)}`);
+    if (r.rabattProzent > 0) {
+      zeilen.push(`Rabatt ${r.rabattProzent} %${r.rabattText ? ` (${r.rabattText})` : ""}:  − ${euro(r.rabattBetrag)}`);
+    }
+    if (!r.kleinunternehmer) zeilen.push(`Umsatzsteuer ${r.ustSatz} %:  ${euro(r.ust)}`);
+    zeilen.push(`Rechnungsbetrag:  ${euro(r.gesamt)}`);
+    if (r.kleinunternehmer && e.ustHinweis) zeilen.push("", e.ustHinweis);
+    zeilen.push("");
+
+    if (r.zahlungsziel) zeilen.push(`Zahlbar bis: ${datum(r.zahlungsziel)}`);
+    if (r.zahlung) zeilen.push(r.zahlung);
+    zeilen.push("");
+
+    const bank = e.bank || {};
+    if (bank.iban) {
+      zeilen.push("Bankverbindung");
+      if (bank.inhaber) zeilen.push(`  ${bank.inhaber}`);
+      zeilen.push(`  IBAN: ${bank.iban}`);
+      if (bank.bic) zeilen.push(`  BIC: ${bank.bic}`);
+      if (bank.institut) zeilen.push(`  ${bank.institut}`);
+      zeilen.push(`  Verwendungszweck: ${r.nummer}`);
+      zeilen.push("");
+    }
+
+    if (r.hinweis) zeilen.push(r.hinweis, "");
+    zeilen.push("Viele Grüße", absender.inhaber || "", absender.firma || "", absender.web || "");
 
     return zeilen.filter((z, i, arr) => !(z === "" && arr[i - 1] === "")).join("\n");
   }

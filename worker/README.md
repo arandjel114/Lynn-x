@@ -265,6 +265,67 @@ Monatsübersicht auf, und die zugehörige Anfrage wandert automatisch mit.
 Was auf jedem Angebot oben im Briefkopf steht, kommt aus dem Block `ABSENDER`
 in `worker.js`. Adresse oder Telefonnummer ändern sich also an einer Stelle.
 
+Unter **Rechnungen** wird aus dem Auftrag Geld. Eine Rechnung entsteht
+entweder aus einem Angebot heraus (der Knopf *Rechnung daraus schreiben*
+übernimmt Kunde, Positionen und Beträge) oder eigenständig über *Neue
+Rechnung*. Sie hat einen eigenen Nummernkreis, `R-2026-001` und so weiter,
+damit sich Angebote und Rechnungen nicht vermischen.
+
+**Wichtig zu wissen:** Eine Rechnung ist zuerst ein Entwurf und beliebig
+änderbar. Mit *Rechnung stellen* wird sie festgeschrieben. Danach lässt sich
+am Inhalt nichts mehr ändern, nur noch der Status. Das ist Absicht: Eine
+fortlaufende Rechnungsnummer, deren Inhalt sich nachträglich anders liest,
+wäre gegenüber dem Finanzamt nicht nachvollziehbar. Wer korrigieren muss,
+storniert und schreibt eine neue.
+
+Die Kennzahlen oben sind in zwei Blöcke geteilt. **Pipeline** zeigt, was
+noch unterwegs ist: neue Anfragen, Angebote draußen, beauftragt. **Umsatz**
+zeigt, was Geld ist: gestellte Rechnungen, überfällige und bezahlte. Ein
+Angebot allein bewegt den Umsatz also nicht mehr, erst die Rechnung.
+Überfällig heißt: gestellt, nicht bezahlt, Zahlungsziel liegt zurück.
+
+---
+
+## Pflichtangaben auf der Rechnung
+
+Eine Rechnung muss nach § 14 UStG bestimmte Angaben enthalten. Das meiste
+füllt das Tool selbst, **zwei Dinge musst du einmalig eintragen**, beide
+oben in `worker.js`:
+
+```js
+const STEUERNUMMER = "";
+const UST_ID = "";
+```
+
+Trag deine Steuernummer vom Finanzamt ein, zum Beispiel
+`STEUERNUMMER = "217/5678/1234";`. Eine von beiden reicht. Solange beide
+leer sind, zeigt das Tool oben eine Warnung, damit dir keine unvollständige
+Rechnung rausrutscht.
+
+Optional, aber praktisch, ist die Bankverbindung gleich darunter:
+
+```js
+const BANK = {
+  inhaber: "Arandjel Jovanovic",
+  iban: "DE00 0000 0000 0000 0000 00",
+  bic: "",
+  institut: "",
+};
+```
+
+Steht dort eine IBAN, erscheint sie unten auf jeder Rechnung, zusammen mit
+der Rechnungsnummer als Verwendungszweck. Bleibt sie leer, fehlt der Block
+einfach.
+
+Was das Tool selbst erledigt: deine Anschrift und die des Kunden, die
+fortlaufende Nummer, das Rechnungsdatum, Menge und Art der Leistung, das
+Entgelt und den Hinweis nach § 19 UStG. Den **Zeitpunkt der Leistung** musst
+du eintragen, er ist Pflicht und das Tool lässt dich ohne ihn keine Rechnung
+stellen. Ein Monat wie „August 2026“ genügt.
+
+Und wie bei allem Rechtlichen hier: lass die Texte einmal von jemandem
+prüfen, der davon lebt. Ich bin kein Steuerberater.
+
 ---
 
 ## Benachrichtigung aufs Handy (Telegram)

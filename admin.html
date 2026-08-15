@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-<link rel="stylesheet" href="css/style.css?v=28">
+<link rel="stylesheet" href="css/style.css?v=29">
 </head>
 <body class="legal-page admin-page">
 
@@ -35,7 +35,7 @@
     <!-- Anmeldung -->
     <section class="admin-login" id="loginView">
       <p class="eyebrow">Interner Bereich</p>
-      <h1 class="legal-title">Anfragen und Angebote</h1>
+      <h1 class="legal-title">Anfragen, Angebote, Rechnungen</h1>
       <form class="admin-login-form" id="loginForm">
         <div class="form-row">
           <label for="passwort">Passwort</label>
@@ -52,14 +52,17 @@
     <!-- Arbeitsbereich -->
     <section class="admin-board" id="boardView" hidden>
       <p class="eyebrow">Interner Bereich</p>
-      <h1 class="legal-title">Anfragen und Angebote</h1>
+      <h1 class="legal-title">Anfragen, Angebote, Rechnungen</h1>
 
       <div class="admin-stats" id="stats"></div>
 
       <div class="admin-tabs" role="tablist">
         <button type="button" class="admin-tab is-active" data-tab="anfragen" role="tab" aria-selected="true">Anfragen <span id="tabAnfragenZahl"></span></button>
         <button type="button" class="admin-tab" data-tab="angebote" role="tab" aria-selected="false">Angebote <span id="tabAngeboteZahl"></span></button>
+        <button type="button" class="admin-tab" data-tab="rechnungen" role="tab" aria-selected="false">Rechnungen <span id="tabRechnungenZahl"></span></button>
       </div>
+
+      <p class="admin-warnung" id="steuerWarnung" hidden></p>
 
       <!-- Anfragen -->
       <div class="admin-panel" id="panelAnfragen">
@@ -79,6 +82,15 @@
         <div class="admin-list" id="listAngebote"></div>
       </div>
 
+      <!-- Rechnungen -->
+      <div class="admin-panel" id="panelRechnungen" hidden>
+        <div class="admin-toolbar">
+          <div class="admin-filter" id="filterRechnungen" role="group" aria-label="Rechnungen filtern"></div>
+          <button type="button" class="admin-neu" id="neuRechnungBtn">Neue Rechnung</button>
+        </div>
+        <div class="admin-list" id="listRechnungen"></div>
+      </div>
+
       <section class="admin-month">
         <h2 class="admin-h2">Einnahmen nach Monat</h2>
         <div id="months"></div>
@@ -94,7 +106,7 @@
   </div>
 </footer>
 
-<script src="js/config.js?v=28"></script>
-<script src="js/admin.js?v=28"></script>
+<script src="js/config.js?v=29"></script>
+<script src="js/admin.js?v=29"></script>
 </body>
 </html>

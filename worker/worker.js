@@ -256,9 +256,29 @@ const ABSENDER = {
   web: "lynq-x.de",
 };
 
+/* Pflichtangabe auf jeder Rechnung nach § 14 Abs. 4 UStG. Solange hier
+   nichts steht, warnt das Tool sichtbar, damit keine unvollstaendige
+   Rechnung rausgeht. Entweder die Steuernummer vom Finanzamt oder eine
+   Umsatzsteuer-Identifikationsnummer, eine von beiden reicht. */
+const STEUERNUMMER = "";
+const UST_ID = "";
+
+/* Bankverbindung fuer den Fuss der Rechnung. Leer lassen ist erlaubt,
+   dann steht sie eben nicht drauf. */
+const BANK = {
+  inhaber: "",
+  iban: "",
+  bic: "",
+  institut: "",
+};
+
 /* Vorbelegung für neue Angebote. */
 const ZAHLUNG_STANDARD = "50 % bei Auftragsstart, 50 % nach Livegang. Zahlbar innerhalb von 14 Tagen ohne Abzug.";
 const GUELTIG_TAGE = 30;
+
+/* Vorbelegung für neue Rechnungen. */
+const ZAHLUNGSZIEL_TAGE = 14;
+const ZAHLUNG_RECHNUNG = "Zahlbar ohne Abzug innerhalb von 14 Tagen nach Rechnungsdatum.";
 
 /* ============================================================
    3. Hilfsfunktionen
@@ -697,6 +717,168 @@ async function angebotAendern(request, env, cors) {
   return jsonAntwort({ ok: true, angebot }, cors);
 }
 
+/* ============================================================
+   Rechnungen
+
+   Eine Rechnung entsteht meist aus einem angenommenen Angebot, kann aber
+   auch für sich stehen. Anders als beim Angebot schreibt hier das Gesetz
+   vor, was drauf muss (§ 14 UStG): Anschrift beider Seiten, Steuernummer,
+   fortlaufende Nummer, Rechnungsdatum, Zeitpunkt der Leistung, Menge und
+   Art der Leistung, das Entgelt. Als Kleinunternehmer kommt statt der
+   Umsatzsteuer der Hinweis auf § 19 UStG dazu.
+   ============================================================ */
+
+const RECHNUNG_STATUS = ["entwurf", "offen", "bezahlt", "storniert"];
+
+async function alleRechnungen(env) {
+  const liste = await env.ANFRAGEN.list({ prefix: "rechnung:", limit: 1000 });
+  const eintraege = await Promise.all(
+    liste.keys.map(async (k) => {
+      try {
+        return JSON.parse(await env.ANFRAGEN.get(k.name));
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return eintraege.filter(Boolean).sort((a, b) => b.erstelltAm.localeCompare(a.erstelltAm));
+}
+
+/** Eigener Nummernkreis, damit Rechnungen und Angebote sich nicht mischen. */
+function naechsteRechnungsnummer(rechnungen, jahr) {
+  const hoechste = rechnungen
+    .map((r) => String(r.nummer || ""))
+    .filter((n) => n.startsWith(`R-${jahr}-`))
+    .map((n) => Number(n.slice(7)))
+    .filter((n) => Number.isFinite(n))
+    .reduce((max, n) => Math.max(max, n), 0);
+  return `R-${jahr}-${String(hoechste + 1).padStart(3, "0")}`;
+}
+
+function tageSpaeter(tage) {
+  const d = new Date();
+  d.setDate(d.getDate() + tage);
+  return d.toISOString().slice(0, 10);
+}
+
+function baueRechnung(daten, vorher, rechnungen) {
+  const jetzt = new Date().toISOString();
+  const heute = jetzt.slice(0, 10);
+
+  const positionen = (Array.isArray(daten.positionen) ? daten.positionen : [])
+    .slice(0, 40)
+    .map((p) => ({
+      text: text(p?.text, 300),
+      menge: menge(p?.menge),
+      einheit: text(p?.einheit, 20) || "Stk.",
+      preis: geld(p?.preis),
+    }))
+    .filter((p) => p.text || p.preis > 0);
+
+  const kleinunternehmer =
+    daten.kleinunternehmer === undefined
+      ? (vorher?.kleinunternehmer ?? KLEINUNTERNEHMER)
+      : daten.kleinunternehmer !== false;
+
+  const rechnung = {
+    id: vorher?.id || `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+    nummer: vorher?.nummer || naechsteRechnungsnummer(rechnungen, new Date().getFullYear()),
+    erstelltAm: vorher?.erstelltAm || jetzt,
+    aktualisiertAm: jetzt,
+    angebotId: text(daten.angebotId ?? vorher?.angebotId, 80),
+    anfrageId: text(daten.anfrageId ?? vorher?.anfrageId, 80),
+    kunde: {
+      name: text(daten.kunde?.name, 120),
+      firma: text(daten.kunde?.firma, 160),
+      strasse: text(daten.kunde?.strasse, 160),
+      plz: text(daten.kunde?.plz, 12),
+      ort: text(daten.kunde?.ort, 120),
+      email: text(daten.kunde?.email, 160),
+    },
+    titel: text(daten.titel, 200),
+    einleitung: text(daten.einleitung, 3000),
+    /* Rechnungsdatum und Leistungszeitpunkt sind zwei verschiedene Dinge
+       und beide Pflicht. Der Leistungszeitpunkt darf ein Zeitraum sein. */
+    datum: text(daten.datum, 40) || vorher?.datum || heute,
+    leistungszeitraum: text(daten.leistungszeitraum, 200),
+    zahlungsziel: text(daten.zahlungsziel, 40) || vorher?.zahlungsziel || tageSpaeter(ZAHLUNGSZIEL_TAGE),
+    positionen,
+    rabattProzent: Math.min(100, geld(daten.rabattProzent)),
+    rabattText: text(daten.rabattText, 200),
+    kleinunternehmer,
+    ustSatz: kleinunternehmer ? 0 : UST_SATZ,
+    zahlung: text(daten.zahlung, 1000),
+    hinweis: text(daten.hinweis, 3000),
+    notiz: text(daten.notiz, 4000),
+    status: RECHNUNG_STATUS.includes(daten.status) ? daten.status : vorher?.status || "entwurf",
+    gestelltAm: vorher?.gestelltAm || "",
+    bezahltAm: vorher?.bezahltAm || "",
+  };
+
+  if (rechnung.status === "offen" && !rechnung.gestelltAm) rechnung.gestelltAm = jetzt;
+  if (rechnung.status === "bezahlt" && !rechnung.bezahltAm) rechnung.bezahltAm = jetzt;
+
+  return { ...rechnung, ...rechne(rechnung) };
+}
+
+async function rechnungAendern(request, env, cors) {
+  let daten;
+  try {
+    daten = await request.json();
+  } catch {
+    return jsonAntwort({ fehler: "Ungültige Anfrage." }, cors, 400);
+  }
+
+  const id = text(daten.id, 80);
+
+  if (daten.loeschen === true) {
+    if (!id) return jsonAntwort({ fehler: "Keine Rechnung angegeben." }, cors, 400);
+    await env.ANFRAGEN.delete(`rechnung:${id}`);
+    return jsonAntwort({ ok: true, geloescht: true }, cors);
+  }
+
+  let vorher = null;
+  if (id) {
+    const roh = await env.ANFRAGEN.get(`rechnung:${id}`);
+    if (!roh) return jsonAntwort({ fehler: "Rechnung nicht gefunden." }, cors, 404);
+    vorher = JSON.parse(roh);
+  }
+
+  if (daten.status !== undefined && !RECHNUNG_STATUS.includes(daten.status)) {
+    return jsonAntwort({ fehler: "Unbekannter Status." }, cors, 400);
+  }
+
+  /* Eine einmal gestellte Rechnung darf man nicht mehr umschreiben. Wer sie
+     korrigieren will, storniert sie und schreibt eine neue. Alles andere
+     brächte die fortlaufende Nummerierung durcheinander und wäre gegenüber
+     dem Finanzamt nicht nachvollziehbar. Der Status darf sich weiter
+     ändern, sonst könnte man nie auf "bezahlt" setzen. */
+  const nurStatuswechsel = Object.keys(daten).every((k) => ["id", "status"].includes(k));
+  if (vorher && vorher.status !== "entwurf" && !nurStatuswechsel) {
+    return jsonAntwort(
+      { fehler: "Diese Rechnung ist schon gestellt. Ändern geht nicht mehr, nur noch stornieren und neu schreiben." },
+      cors,
+      409,
+    );
+  }
+
+  let rechnung;
+  if (vorher && nurStatuswechsel) {
+    const jetzt = new Date().toISOString();
+    rechnung = { ...vorher, aktualisiertAm: jetzt };
+    if (daten.status !== undefined) rechnung.status = daten.status;
+    if (rechnung.status === "offen" && !rechnung.gestelltAm) rechnung.gestelltAm = jetzt;
+    if (rechnung.status === "bezahlt" && !rechnung.bezahltAm) rechnung.bezahltAm = jetzt;
+  } else {
+    /* Entwurf bearbeiten oder neu anlegen: alles neu aufbauen und rechnen. */
+    const rechnungen = vorher ? [] : await alleRechnungen(env);
+    rechnung = baueRechnung(daten, vorher, rechnungen);
+  }
+
+  await env.ANFRAGEN.put(`rechnung:${rechnung.id}`, JSON.stringify(rechnung));
+  return jsonAntwort({ ok: true, rechnung }, cors);
+}
+
 /* --- Antwort an den Kunden verschicken ---
    Läuft über Resend, falls eingerichtet. Ist es das nicht, sagt der Worker
    das klar, und im Browser bleibt der Weg über das Mailprogramm. */
@@ -751,44 +933,72 @@ async function mailSenden(request, env, cors) {
 
 /* --- Anfragen, Angebote und Zahlen ausliefern --- */
 async function daten(request, env, cors) {
-  const [anfragen, angebote] = await Promise.all([alleAnfragen(env), alleAngebote(env)]);
+  const [anfragen, angebote, rechnungen] = await Promise.all([
+    alleAnfragen(env),
+    alleAngebote(env),
+    alleRechnungen(env),
+  ]);
 
   const summe = (liste) => geld(liste.reduce((s, a) => s + (a.gesamt || 0), 0));
-  const offen = angebote.filter((a) => a.status === "versendet");
-  const beauftragt = angebote.filter((a) => a.status === "angenommen");
-  const bezahlt = angebote.filter((a) => a.status === "bezahlt");
 
-  /* Umsatz nach Monat, gezählt wird der Tag der Zahlung. */
+  /* Pipeline: was an Aufträgen unterwegs ist. */
+  const angebotOffen = angebote.filter((a) => a.status === "versendet");
+  const beauftragt = angebote.filter((a) => a.status === "angenommen");
+
+  /* Umsatz: was tatsächlich in Rechnung gestellt wurde. */
+  const rechnungOffen = rechnungen.filter((r) => r.status === "offen");
+  const rechnungBezahlt = rechnungen.filter((r) => r.status === "bezahlt");
+
+  /* Nach Monat, gezählt wird der Tag der Zahlung. */
   const proMonat = {};
-  for (const a of bezahlt) {
-    const monat = (a.bezahltAm || a.erstelltAm).slice(0, 7);
-    proMonat[monat] = geld((proMonat[monat] || 0) + (a.gesamt || 0));
+  for (const r of rechnungBezahlt) {
+    const monat = (r.bezahltAm || r.datum || r.erstelltAm).slice(0, 7);
+    proMonat[monat] = geld((proMonat[monat] || 0) + (r.gesamt || 0));
   }
+
+  /* Überfällig: gestellt, nicht bezahlt, Zahlungsziel liegt zurück. */
+  const heute = new Date().toISOString().slice(0, 10);
+  const ueberfaellig = rechnungOffen.filter((r) => r.zahlungsziel && r.zahlungsziel < heute);
 
   return jsonAntwort(
     {
       anfragen,
       angebote,
+      rechnungen,
       absender: ABSENDER,
       einstellungen: {
         kleinunternehmer: KLEINUNTERNEHMER,
         ustSatz: UST_SATZ,
         ustHinweis: UST_HINWEIS,
         zahlungStandard: ZAHLUNG_STANDARD,
+        zahlungRechnung: ZAHLUNG_RECHNUNG,
         gueltigTage: GUELTIG_TAGE,
+        zahlungszielTage: ZAHLUNGSZIEL_TAGE,
+        steuernummer: STEUERNUMMER,
+        ustId: UST_ID,
+        bank: BANK,
         mailversand: Boolean(env.RESEND_KEY && env.MAIL_VON),
       },
       zahlen: {
+        /* Block 1: Pipeline */
         neu: anfragen.filter((a) => a.status === "neu").length,
         inArbeit: anfragen.filter((a) => a.status === "in_arbeit").length,
         anfragenGesamt: anfragen.length,
         entwuerfe: angebote.filter((a) => a.status === "entwurf").length,
-        angeboteOffen: offen.length,
-        angeboteOffenSumme: summe(offen),
+        angeboteOffen: angebotOffen.length,
+        angeboteOffenSumme: summe(angebotOffen),
         beauftragt: beauftragt.length,
         beauftragtSumme: summe(beauftragt),
-        bezahltSumme: summe(bezahlt),
         angeboteGesamt: angebote.length,
+
+        /* Block 2: Umsatz */
+        rechnungEntwuerfe: rechnungen.filter((r) => r.status === "entwurf").length,
+        rechnungOffen: rechnungOffen.length,
+        rechnungOffenSumme: summe(rechnungOffen),
+        ueberfaellig: ueberfaellig.length,
+        ueberfaelligSumme: summe(ueberfaellig),
+        bezahltSumme: summe(rechnungBezahlt),
+        rechnungenGesamt: rechnungen.length,
         proMonat,
       },
     },
@@ -865,6 +1075,7 @@ export default {
       if (pfad === "/admin/daten" && request.method === "GET") return daten(request, env, cors);
       if (pfad === "/admin/anfrage" && request.method === "POST") return anfrageAendern(request, env, cors);
       if (pfad === "/admin/angebot" && request.method === "POST") return angebotAendern(request, env, cors);
+      if (pfad === "/admin/rechnung" && request.method === "POST") return rechnungAendern(request, env, cors);
       if (pfad === "/admin/mail" && request.method === "POST") return mailSenden(request, env, cors);
       return jsonAntwort({ fehler: "Unbekannter Aufruf." }, cors, 404);
     }

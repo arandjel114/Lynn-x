@@ -11,4 +11,4 @@
  *
  * Anleitung: worker/README.md
  */
-window.LYNQX_API = "";
+window.LYNQX_API = "https://flat-sun-939clynq-x-assistant.arandjeljovanovic3.workers.dev";

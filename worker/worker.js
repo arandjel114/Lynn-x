@@ -266,8 +266,8 @@ const UST_ID = "";
 /* Bankverbindung fuer den Fuss der Rechnung. Leer lassen ist erlaubt,
    dann steht sie eben nicht drauf. */
 const BANK = {
-  inhaber: "",
-  iban: "",
+  inhaber: "Arandjel Jovanovic",
+  iban: "DE18 2022 0800 0057 6915 66",
   bic: "",
   institut: "",
 };

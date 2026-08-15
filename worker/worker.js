@@ -231,6 +231,11 @@ const SESSION_TTL = 43200;      // Sitzung gilt 12 Stunden
 const LOGIN_MAX = 5;            // Fehlversuche …
 const LOGIN_FENSTER = 900;      // … pro 15 Minuten und IP
 
+/* Zielchat der Benachrichtigung. Kein Geheimnis: die Nummer benennt nur den
+   Chat, verschicken kann darin nur wer den Token hat. Ueber die Bindung
+   TELEGRAM_CHAT_ID ueberschreibbar. */
+const DEFAULT_CHAT_ID = "5985602965";
+
 /* Angebote. Kleinunternehmer nach § 19 UStG weist keine Umsatzsteuer aus.
    Wer die Regelung später verlässt, setzt KLEINUNTERNEHMER auf false. */
 const KLEINUNTERNEHMER = true;
@@ -363,12 +368,18 @@ function menge(wert) {
    Darf niemals dazu führen, dass eine Anfrage verloren geht. Deshalb ist
    hier alles in try/catch und der Rückgabewert interessiert niemanden. */
 async function telegram(env, nachricht) {
-  if (!env.TELEGRAM_TOKEN || !env.TELEGRAM_CHAT_ID) {
+  /* Die Chat-Id benennt nur den Zielchat und ist kein Geheimnis: ohne den
+     Token kann damit niemand etwas verschicken. Deshalb steht sie als
+     Rueckfallwert hier. Der Token bleibt ein Secret und gehoert niemals
+     hierher. */
+  const chat = String(env.TELEGRAM_CHAT_ID || "").trim() || DEFAULT_CHAT_ID;
+
+  if (!env.TELEGRAM_TOKEN || !chat) {
     console.log(
-      "Telegram: uebersprungen. Token vorhanden:",
-      Boolean(env.TELEGRAM_TOKEN),
-      "Chat-Id vorhanden:",
-      Boolean(env.TELEGRAM_CHAT_ID),
+      "Telegram: uebersprungen. Token-Laenge:",
+      String(env.TELEGRAM_TOKEN || "").length,
+      "Chat-Id:",
+      chat || "(leer)",
     );
     return;
   }
@@ -377,7 +388,7 @@ async function telegram(env, nachricht) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: env.TELEGRAM_CHAT_ID,
+        chat_id: chat,
         text: nachricht,
         disable_web_page_preview: true,
       }),

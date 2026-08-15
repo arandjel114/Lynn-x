@@ -34,9 +34,29 @@ in die Spalte **Traffic %**. Steht dort 0 %, liegt die neue Version bereit,
 bekommt aber keine Aufrufe. Dann über **New deployment** die oberste Version
 auswählen und den Regler auf 100 % stellen.
 
-**Wenn ein Build fehlschlägt:** Meist stimmt das **Root directory** nicht.
-Es muss auf `worker` stehen, weil `worker.js` in diesem Unterordner liegt
-und nicht im Hauptverzeichnis.
+**Die wichtigste Einstellung überhaupt:** Unter **Settings → Build →
+Build configuration** muss **Root directory** auf `/worker` stehen.
+
+Steht dort `/`, sucht Cloudflare im Hauptverzeichnis. Da liegt die Website
+mit ihrer `index.html`, und Cloudflare hält das für eine statische Seite.
+Es rollt dann die Website als Dateiablage aus und **ersetzt damit den
+Worker-Code**. Danach läuft dort kein Programm mehr: Das Angebotstool meldet
+„Load failed“, das Kontaktformular fällt auf das Mailprogramm zurück, und
+unter der workers.dev-Adresse erscheint die Website statt einer Antwort des
+Workers. In den Einstellungen steht dann der verräterische Satz
+„Variables cannot be added to a Worker that only has static assets“.
+
+Passiert es doch: unter **Deployments** eine ältere Version mit echtem Code
+suchen und **Rollback** drücken, dann das Root directory richtigstellen.
+
+Die übrigen Felder der Build-Konfiguration:
+
+| Feld | Wert |
+|---|---|
+| Build command | leer |
+| Deploy command | `npx wrangler deploy` |
+| Root directory | `/worker` |
+| Production branch | `main` |
 
 ---
 

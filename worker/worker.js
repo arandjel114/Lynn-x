@@ -260,7 +260,7 @@ const ABSENDER = {
    nichts steht, warnt das Tool sichtbar, damit keine unvollstaendige
    Rechnung rausgeht. Entweder die Steuernummer vom Finanzamt oder eine
    Umsatzsteuer-Identifikationsnummer, eine von beiden reicht. */
-const STEUERNUMMER = "";
+const STEUERNUMMER = "336/5098/5424";
 const UST_ID = "";
 
 /* Bankverbindung fuer den Fuss der Rechnung. Leer lassen ist erlaubt,

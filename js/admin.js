@@ -641,6 +641,7 @@
 
         <div class="admin-angebot-nav">
           <button type="button" class="admin-speichern" data-aspeichern="${esc(k)}">Speichern</button>
+          <button type="button" class="admin-kopieren" data-adruck="${esc(k)}">Drucken / PDF</button>
           <button type="button" class="admin-kopieren" data-akopieren="${esc(k)}">Text kopieren</button>
           ${einstellungen.mailversand ? `<button type="button" class="admin-kopieren" data-amailen="${esc(k)}">Direkt senden</button>` : ""}
           <button type="button" class="admin-kopieren" data-amailprog="${esc(k)}">Im Mailprogramm öffnen</button>
@@ -785,6 +786,9 @@
 
     const speichern = event.target.closest("[data-aspeichern]");
     if (speichern) return speichereAngebot(speichern.dataset.aspeichern);
+
+    const adruck = event.target.closest("[data-adruck]");
+    if (adruck) return drucke("angebot", stand(adruck.dataset.adruck));
 
     const kopieren = event.target.closest("[data-akopieren]");
     if (kopieren) {
@@ -1068,7 +1072,9 @@
             </label>
           </div>
           <div class="admin-angebot-nav">
-            <button type="button" class="admin-kopieren" data-rkopieren="${esc(k)}">Text kopieren</button>
+            <button type="button" class="admin-kopieren" data-rdruck="${esc(k)}">Drucken / PDF</button>
+            <button type="button" class="admin-kopieren" data-rdruck="${esc(k)}">Drucken / PDF</button>
+          <button type="button" class="admin-kopieren" data-rkopieren="${esc(k)}">Text kopieren</button>
             ${einstellungen.mailversand ? `<button type="button" class="admin-kopieren" data-rmailen="${esc(k)}">Direkt senden</button>` : ""}
             <button type="button" class="admin-kopieren" data-rmailprog="${esc(k)}">Im Mailprogramm öffnen</button>
             <button type="button" class="admin-loeschen" data-rloeschen="${esc(k)}">Löschen</button>
@@ -1138,6 +1144,7 @@
         <div class="admin-angebot-nav">
           <button type="button" class="admin-speichern" data-rspeichern="${esc(k)}">Entwurf speichern</button>
           <button type="button" class="admin-speichern" data-rstellen="${esc(k)}">Rechnung stellen</button>
+          <button type="button" class="admin-kopieren" data-rdruck="${esc(k)}">Drucken / PDF</button>
           <button type="button" class="admin-kopieren" data-rkopieren="${esc(k)}">Text kopieren</button>
           <button type="button" class="admin-loeschen" data-rloeschen="${esc(k)}">${istEntwurf ? "Verwerfen" : "Löschen"}</button>
           <span class="admin-hinweis" data-hinweis="${esc(k)}"></span>
@@ -1271,6 +1278,9 @@
       if (!window.confirm("Rechnung jetzt stellen? Danach lässt sie sich nicht mehr ändern, nur noch stornieren.")) return;
       return speichereRechnung(stellen.dataset.rstellen, "offen");
     }
+
+    const rdruck = event.target.closest("[data-rdruck]");
+    if (rdruck) return drucke("rechnung", rstand(rdruck.dataset.rdruck));
 
     const kopieren = event.target.closest("[data-rkopieren]");
     if (kopieren) {
@@ -1434,6 +1444,212 @@
     zeilen.push("Viele Grüße", absender.inhaber || "", absender.firma || "", absender.web || "");
 
     return zeilen.filter((z, i, arr) => !(z === "" && arr[i - 1] === "")).join("\n");
+  }
+
+
+  /* ============================================================
+     Drucken und als PDF sichern
+
+     Kein zusaetzliches Programm noetig: Der Browser kann beides. Wir bauen
+     einen sauberen A4-Bogen in einem unsichtbaren Rahmen und rufen dessen
+     Druckdialog auf. Darin gibt es "Als PDF sichern". Ein Rahmen statt eines
+     neuen Fensters, weil Popup-Blocker das neue Fenster oft schlucken.
+     ============================================================ */
+
+  function druckSeite(art, d) {
+    const a = d.kunde || {};
+    const ist = (w) => (w ? String(w) : "");
+    const e = einstellungen;
+    const rechnung = art === "rechnung";
+
+    const kopfzeilen = [
+      ["Nummer", d.nummer && d.nummer !== "neu" ? d.nummer : "Entwurf"],
+      [rechnung ? "Rechnungsdatum" : "Datum", datum(rechnung ? d.datum : d.erstelltAm || new Date().toISOString())],
+      rechnung && d.leistungszeitraum ? ["Zeitpunkt der Leistung", d.leistungszeitraum] : null,
+      rechnung && d.zahlungsziel ? ["Zahlbar bis", datum(d.zahlungsziel)] : null,
+      !rechnung && d.gueltigBis ? ["Gültig bis", datum(d.gueltigBis)] : null,
+      !rechnung && d.lieferzeit ? ["Zeitrahmen", d.lieferzeit] : null,
+    ].filter(Boolean);
+
+    const posZeilen = d.positionen
+      .filter((p) => p.text || p.preis)
+      .map(
+        (p, i) => `
+          <tr>
+            <td class="nr">${i + 1}</td>
+            <td>${esc(p.text)}</td>
+            <td class="zahl">${p.menge}</td>
+            <td>${esc(p.einheit || "")}</td>
+            <td class="zahl">${euro(p.preis)}</td>
+            <td class="zahl">${euro(p.menge * p.preis)}</td>
+          </tr>`,
+      )
+      .join("");
+
+    const summen = [
+      ["Nettobetrag", euro(d.netto)],
+      d.rabattProzent > 0
+        ? [`Rabatt ${d.rabattProzent} %${d.rabattText ? " (" + esc(d.rabattText) + ")" : ""}`, "− " + euro(d.rabattBetrag)]
+        : null,
+      d.rabattProzent > 0 ? ["Zwischensumme", euro(d.nettoNachRabatt)] : null,
+      !d.kleinunternehmer ? [`Umsatzsteuer ${d.ustSatz} %`, euro(d.ust)] : null,
+    ]
+      .filter(Boolean)
+      .map(([t, w]) => `<tr><td>${t}</td><td class="zahl">${w}</td></tr>`)
+      .join("");
+
+    const bank = e.bank || {};
+
+    return `<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8">
+<title>${rechnung ? "Rechnung" : "Angebot"} ${esc(d.nummer || "")}</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 22mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1a1a1a;
+  }
+  .kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 20mm; }
+  .marke { font-size: 15pt; font-weight: 700; letter-spacing: .04em; color: #8a6a1e; }
+  .marke small { display: block; font-size: 8pt; font-weight: 400; color: #6a6a6a; letter-spacing: 0; margin-top: 2pt; }
+  .absender { text-align: right; font-size: 8.5pt; line-height: 1.5; color: #444; }
+  .linie { border: none; border-top: 1.5pt solid #c69a2c; margin: 6mm 0 0; }
+
+  .adressfeld { margin-top: 18mm; min-height: 28mm; }
+  .adressfeld .klein { font-size: 7pt; color: #888; border-bottom: .5pt solid #ccc; padding-bottom: 1mm; margin-bottom: 3mm; }
+
+  .titel { margin: 10mm 0 2mm; font-size: 15pt; font-weight: 700; }
+  .betreff { margin: 0 0 6mm; font-size: 11pt; color: #444; }
+
+  .kopfdaten { width: 100%; border-collapse: collapse; margin-bottom: 8mm; font-size: 9.5pt; }
+  .kopfdaten td { padding: 1mm 0; vertical-align: top; }
+  .kopfdaten td:first-child { color: #666; width: 45mm; }
+
+  .anrede { margin: 0 0 4mm; }
+
+  table.pos { width: 100%; border-collapse: collapse; margin: 4mm 0 0; font-size: 9.5pt; }
+  table.pos th {
+    text-align: left; font-size: 7.5pt; letter-spacing: .1em; text-transform: uppercase;
+    color: #666; font-weight: 600; padding: 0 2mm 2mm 0; border-bottom: 1pt solid #333;
+  }
+  table.pos td { padding: 2.5mm 2mm 2.5mm 0; border-bottom: .5pt solid #ddd; vertical-align: top; }
+  table.pos .nr { width: 8mm; color: #888; }
+  table.pos .zahl { text-align: right; white-space: nowrap; }
+  table.pos th.zahl { text-align: right; }
+
+  .summen { width: 75mm; margin-left: auto; margin-top: 5mm; border-collapse: collapse; font-size: 9.5pt; }
+  .summen td { padding: 1.5mm 0; }
+  .summen td.zahl { text-align: right; white-space: nowrap; }
+  .summen tr.gesamt td {
+    border-top: 1pt solid #333; padding-top: 2.5mm; font-size: 12pt; font-weight: 700; color: #8a6a1e;
+  }
+  .hinweis { margin-top: 4mm; font-size: 8.5pt; color: #555; }
+
+  .block { margin-top: 8mm; }
+  .block h3 { margin: 0 0 1.5mm; font-size: 9pt; letter-spacing: .06em; text-transform: uppercase; color: #666; font-weight: 600; }
+
+  .fuss {
+    margin-top: 14mm; padding-top: 4mm; border-top: .5pt solid #ccc;
+    font-size: 8pt; line-height: 1.5; color: #666;
+    display: flex; justify-content: space-between; gap: 10mm;
+  }
+  .fuss div { flex: 1; }
+  @media print { .fuss { position: fixed; bottom: 0; left: 0; right: 0; } }
+</style></head>
+<body>
+  <div class="kopf">
+    <div class="marke">${esc(absender.firma || "Lynq-x")}
+      ${absender.zusatz ? `<small>${esc(absender.zusatz)}</small>` : ""}
+    </div>
+    <div class="absender">
+      ${esc(absender.inhaber || "")}<br>
+      ${esc(absender.strasse || "")}<br>
+      ${esc(absender.ort || "")}<br>
+      ${esc(absender.telefon || "")}<br>
+      ${esc(absender.email || "")}
+    </div>
+  </div>
+  <hr class="linie">
+
+  <div class="adressfeld">
+    <div class="klein">${esc(absender.firma || "")} · ${esc(absender.strasse || "")} · ${esc(absender.ort || "")}</div>
+    ${a.firma ? esc(a.firma) + "<br>" : ""}
+    ${a.name ? esc(a.name) + "<br>" : ""}
+    ${a.strasse ? esc(a.strasse) + "<br>" : ""}
+    ${ist(a.plz) || ist(a.ort) ? esc(`${a.plz || ""} ${a.ort || ""}`.trim()) : ""}
+  </div>
+
+  <h1 class="titel">${rechnung ? "Rechnung" : "Angebot"}</h1>
+  ${d.titel ? `<p class="betreff">${esc(d.titel)}</p>` : ""}
+
+  <table class="kopfdaten">
+    ${kopfzeilen.map(([t, w]) => `<tr><td>${esc(t)}</td><td>${esc(w)}</td></tr>`).join("")}
+  </table>
+
+  ${a.name ? `<p class="anrede">Hallo ${esc(a.name.split(" ")[0])},</p>` : ""}
+  ${d.einleitung ? `<p>${esc(d.einleitung)}</p>` : ""}
+
+  <table class="pos">
+    <thead><tr>
+      <th class="nr">#</th><th>Leistung</th><th class="zahl">Menge</th><th>Einheit</th>
+      <th class="zahl">Einzelpreis</th><th class="zahl">Summe</th>
+    </tr></thead>
+    <tbody>${posZeilen}</tbody>
+  </table>
+
+  <table class="summen">
+    ${summen}
+    <tr class="gesamt"><td>${rechnung ? "Rechnungsbetrag" : "Gesamt"}</td><td class="zahl">${euro(d.gesamt)}</td></tr>
+  </table>
+  ${d.kleinunternehmer && e.ustHinweis ? `<p class="hinweis">${esc(e.ustHinweis)}</p>` : ""}
+
+  ${d.zahlung ? `<div class="block"><h3>Zahlung</h3><p>${esc(d.zahlung)}</p></div>` : ""}
+  ${
+    rechnung && bank.iban
+      ? `<div class="block"><h3>Bankverbindung</h3><p>
+          ${esc(bank.inhaber || "")}${bank.inhaber ? "<br>" : ""}
+          IBAN ${esc(bank.iban)}${bank.bic ? "<br>BIC " + esc(bank.bic) : ""}${bank.institut ? "<br>" + esc(bank.institut) : ""}<br>
+          Verwendungszweck: ${esc(d.nummer || "")}
+        </p></div>`
+      : ""
+  }
+  <div class="block"><p>${esc(d.hinweis || (rechnung ? "Vielen Dank für die Zusammenarbeit." : "Melde dich einfach, wenn du Fragen hast oder starten möchtest."))}</p>
+    <p style="margin-top:6mm">Viele Grüße<br>${esc(absender.inhaber || "")}</p>
+  </div>
+
+  <div class="fuss">
+    <div>${esc(absender.firma || "")}${absender.zusatz ? "<br>" + esc(absender.zusatz) : ""}<br>${esc(absender.inhaber || "")}</div>
+    <div>${esc(absender.strasse || "")}<br>${esc(absender.ort || "")}<br>${esc(absender.web || "")}</div>
+    <div>${esc(absender.telefon || "")}<br>${esc(absender.email || "")}${e.steuernummer ? "<br>Steuernummer " + esc(e.steuernummer) : ""}${e.ustId ? "<br>USt-IdNr. " + esc(e.ustId) : ""}</div>
+  </div>
+</body></html>`;
+  }
+
+  /** Öffnet den Druckdialog des Browsers. Dort gibt es "Als PDF sichern". */
+  function drucke(art, d) {
+    const rahmen = document.createElement("iframe");
+    rahmen.setAttribute("aria-hidden", "true");
+    rahmen.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(rahmen);
+
+    const doc = rahmen.contentWindow.document;
+    doc.open();
+    doc.write(druckSeite(art, d));
+    doc.close();
+
+    /* Erst drucken, wenn der Rahmen fertig geladen hat, sonst kommt eine
+       leere Seite heraus. Danach wieder aufräumen. */
+    const los = () => {
+      rahmen.contentWindow.focus();
+      rahmen.contentWindow.print();
+      window.setTimeout(() => rahmen.remove(), 1000);
+    };
+    if (doc.readyState === "complete") window.setTimeout(los, 100);
+    else rahmen.onload = los;
   }
 
   /* ---------- Start ---------- */

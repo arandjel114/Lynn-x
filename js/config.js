@@ -12,3 +12,15 @@
  * Anleitung: worker/README.md
  */
 window.LYNQX_API = "https://flat-sun-939clynq-x-assistant.arandjeljovanovic3.workers.dev";
+
+/**
+ * Profile in den sozialen Netzwerken.
+ *
+ * Leer lassen heißt: das Symbol erscheint nicht. So steht nie ein Link da,
+ * der ins Leere führt. Vollständige Adresse eintragen, ohne Anhängsel wie
+ * "?utm_source=qr", das ist nur die Herkunftsmarkierung des QR-Codes.
+ */
+window.LYNQX_SOCIALS = {
+  instagram: "https://www.instagram.com/lynqx.marketing",
+  tiktok: "https://www.tiktok.com/@lynqxmarketing",
+};

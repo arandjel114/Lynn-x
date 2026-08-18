@@ -1780,6 +1780,11 @@ h1 .word:last-child {
 }
 
 .assistant {
+  /* Der Kasten ist groesser als das, was man sieht: das geschlossene
+     Chatfenster liegt unsichtbar darin. Ohne diese Zeile faengt es jeden
+     Klick ab, der im unteren Seitenbereich landet. Durchlaessig stellen und
+     nur den sichtbaren Teilen die Klicks zurueckgeben. */
+  pointer-events: none;
   position: fixed;
   right: clamp(16px, 3vw, 32px);
   bottom: clamp(16px, 3vw, 32px);
@@ -1792,6 +1797,8 @@ h1 .word:last-child {
 }
 
 /* --- Auslöser: kein Kasten, sondern eine Kugel mit Schriftzug --- */
+/* Die Kugel bleibt klickbar, der leere Raum um sie herum nicht. */
+.assistant-launcher { pointer-events: auto; }
 .assistant-launcher {
   order: 2;
   display: inline-flex;
@@ -1895,12 +1902,20 @@ h1 .word:last-child {
   transform-origin: 100% 100%;
   opacity: 0;
   transform: translateY(18px) scale(.94);
-  transition: opacity .34s var(--ease), transform .42s var(--ease);
+  /* Geschlossen wirklich weg sein, nicht nur durchsichtig. Sonst bleibt es
+     anklickbar und liegt ueber allem, was darunter steht. Die Sichtbarkeit
+     schaltet erst nach dem Ausblenden um, damit nichts springt. */
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .34s var(--ease), transform .42s var(--ease), visibility 0s linear .42s;
   will-change: transform, opacity;
 }
 .assistant.is-open .assistant-panel {
   opacity: 1;
   transform: translateY(0) scale(1);
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity .34s var(--ease), transform .42s var(--ease), visibility 0s linear 0s;
 }
 /* Goldene Haarlinie als Rahmen, per Maske statt Border. */
 .assistant-panel::before {

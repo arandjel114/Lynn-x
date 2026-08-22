@@ -91,7 +91,11 @@ und verweise auf die Entwürfe als Arbeitsprobe.
 3. SEO & Sichtbarkeit: technisches Fundament (Ladezeit, Struktur, saubere
    Auszeichnung) ist bei jeder Seite dabei; darüber hinaus Inhalte und lokale
    Sichtbarkeit. Kein Versprechen von Platz 1.
-4. Branding: Logo, Farbwelt, Auftritt.
+4. Google & Google Maps: Google-Unternehmensprofil einrichten oder aufräumen,
+   Öffnungszeiten, Kategorien, Leistungen und Fotos pflegen, damit der Betrieb
+   in der lokalen Suche und auf der Karte auftaucht. Dazu ein Weg, wie
+   Bewertungen hereinkommen. Kein Kauf von Bewertungen.
+5. Branding: Logo, Farbwelt, Auftritt.
 
 Onlineshops mit Zahlungsanbindung sind möglich und der aufwendigste Projekttyp.
 Marketing und Werbekampagnen gibt es, aber nur wenn die Seite dahinter trägt.

@@ -51,14 +51,20 @@
       /* Bewusst ohne allgemeine Frage-Floskeln wie "könnt ihr". Die stehen in
          jeder zweiten Frage und würden speziellere Themen überstimmen. */
       keys: ["leistung", "was macht ihr", "was bietet ihr", "was bietet lynq", "angebot an", "services"],
-      answer: `Vier Bereiche: Webdesign &amp; Entwicklung, Conversion-Strategie, SEO &amp; Sichtbarkeit sowie Branding.<br><br>Alles davon einzeln oder als Gesamtpaket, je nachdem, was bei dir schon steht. ${link("#leistungen", "Leistungen ansehen")}`,
-      chips: ["Macht ihr auch SEO?", "Baut ihr Onlineshops?"]
+      answer: `Fünf Bereiche: Webdesign &amp; Entwicklung, Conversion-Strategie, SEO &amp; Sichtbarkeit, Google &amp; Google Maps sowie Branding.<br><br>Alles davon einzeln oder als Gesamtpaket, je nachdem, was bei dir schon steht. ${link("#leistungen", "Leistungen ansehen")}`,
+      chips: ["Was ist mit Google Maps?", "Baut ihr Onlineshops?"]
     },
     {
       id: "seo",
       keys: ["seo", "google", "sichtbar", "ranking", "gefunden werden", "suchmaschine", "platz 1", "keywords"],
       answer: `Ja. Technisches Fundament (Ladezeit, Struktur, saubere Auszeichnung) ist bei jeder Seite dabei. Darüber hinaus arbeiten wir an Inhalten und lokaler Sichtbarkeit.<br><br>Was wir nicht versprechen: Platz 1 bis nächsten Monat. Wer das verspricht, verkauft dir Zufall.`,
-      chips: ["Macht ihr auch Marketing?", "Was kostet das?"]
+      chips: ["Macht ihr auch Marketing?", "Was ist mit Google Maps?"]
+    },
+    {
+      id: "maps",
+      keys: ["google maps", "maps", "unternehmensprofil", "google profil", "my business", "bewertung", "karte", "eintrag bei google", "standort"],
+      answer: `Ja. Wir richten dein Google-Unternehmensprofil ein oder räumen ein bestehendes auf: Öffnungszeiten, Leistungen, Fotos, Kategorien.<br><br>Damit tauchst du in der lokalen Suche und in Google Maps auf, und Bewertungen landen dort, wo sie dir Anrufe bringen. ${link("#leistungen", "Leistungen ansehen")}`,
+      chips: ["Macht ihr auch SEO?", "Projekt anfragen"]
     },
     {
       id: "marketing",

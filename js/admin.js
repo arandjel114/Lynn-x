@@ -27,6 +27,7 @@
   const loginNote = el("loginNote");
   const logoutBtn = el("logoutBtn");
   const statsEl = el("stats");
+  const heuteEl = el("heute");
   const listEl = el("list");
   const listAngeboteEl = el("listAngebote");
   const filterEl = el("filter");
@@ -190,6 +191,7 @@
       absender = daten.absender || {};
       einstellungen = daten.einstellungen || {};
       zeigeSteuerWarnung();
+      zeichneHeute();
       zeichneStats(daten.zahlen);
       zeichneFilter();
       zeichneListe();
@@ -209,6 +211,272 @@
   }
 
   refreshBtn.addEventListener("click", laden);
+
+  /* ---------- Heute ----------
+     Ganz oben steht nicht, wie viel es insgesamt gibt, sondern was heute
+     liegen bleibt, wenn du nichts tust: überfällige Rechnungen, unbeantwortete
+     Anfragen, Angebote, die niemand mehr nachfasst. Alles davon rechnet sich
+     aus den Daten aus, die ohnehin schon geladen sind. Keine zweite Quelle,
+     die irgendwann anders sagt als die Listen darunter. */
+
+  const TAG_MS = 86400000;
+  const KUNDE = (d) => d.kunde?.firma || d.kunde?.name || "ohne Namen";
+  const istDatum = (w) => /^\d{4}-\d{2}-\d{2}$/.test(w || "");
+  const tagAnfang = (iso) => new Date(iso.slice(0, 10) + "T00:00:00").getTime();
+  /* Positiv heißt: liegt noch vor uns. Negativ: ist vorbei. */
+  const tageBis = (iso) => Math.round((tagAnfang(iso) - tagAnfang(heuteIso())) / TAG_MS);
+  const tageSeit = (iso) => (iso ? -tageBis(iso) : 0);
+  const seit = (tage) => (tage <= 0 ? "heute" : tage === 1 ? "seit gestern" : `seit ${tage} Tagen`);
+
+  const ZAHLWORT = ["Nichts", "Eine", "Zwei", "Drei", "Vier", "Fünf", "Sechs", "Sieben", "Acht", "Neun", "Zehn"];
+
+  const ICONS = {
+    anfrage: '<path d="M2.5 4.5h13v9h-13z"/><path d="m2.5 5 6.5 5 6.5-5"/>',
+    angebot: '<path d="M4 2.5h7l3 3v10H4z"/><path d="M10.6 2.6V6h3.2"/><path d="M6.5 9.5h5M6.5 12h3.5"/>',
+    rechnung: '<path d="M3.5 2.5h11v13l-2-1.2-1.8 1.2-1.7-1.2-1.8 1.2-1.7-1.2-2 1.2z"/><path d="M6 6h6M6 9h6M6 12h3.5"/>',
+  };
+
+  function heuteAufgaben() {
+    const auf = [];
+    const heute = heuteIso();
+    const add = (o) => auf.push(o);
+
+    /* 1. Geld, das schon zu spät ist. */
+    rechnungen
+      .filter((r) => r.status === "offen" && istDatum(r.zahlungsziel) && r.zahlungsziel < heute)
+      .forEach((r) =>
+        add({
+          prio: 1,
+          alter: tageSeit(r.zahlungsziel),
+          dringend: true,
+          art: "rechnung",
+          titel: `Rechnung ${r.nummer} ist überfällig`,
+          meta: `${KUNDE(r)} · ${euro(r.gesamt)} · Zahlungsziel war der ${datum(r.zahlungsziel)}, ${tageSeit(r.zahlungsziel)} Tage her`,
+          aktionen: [{ text: "Rechnung öffnen", ziel: "rechnung", id: r.id, haupt: true }],
+        }),
+      );
+
+    /* 2. Anfragen, die noch niemand angefasst hat. */
+    anfragen
+      .filter((a) => a.status === "neu")
+      .forEach((a) => {
+        const tage = tageSeit(a.eingang);
+        add({
+          prio: tage >= 2 ? 2 : 3,
+          alter: tage,
+          dringend: tage >= 3,
+          art: "anfrage",
+          titel: `Anfrage von ${a.name} wartet auf Antwort`,
+          meta: [a.projekt, a.branche, a.budget].filter(Boolean).concat(seit(tage)).join(" · "),
+          aktionen: [{ text: "Anfrage öffnen", ziel: "anfrage", id: a.id, haupt: true }],
+        });
+      });
+
+    /* 3. Beauftragt, aber noch nicht in Rechnung gestellt: dein Geld liegt hier. */
+    angebote
+      .filter(
+        (a) =>
+          a.status === "angenommen" &&
+          !rechnungen.some((r) => r.angebotId === a.id && r.status !== "storniert"),
+      )
+      .forEach((a) =>
+        add({
+          prio: 4,
+          alter: tageSeit(a.angenommenAm || a.aktualisiertAm || a.erstelltAm),
+          art: "rechnung",
+          titel: `Angebot ${a.nummer} ist beauftragt, aber nicht abgerechnet`,
+          meta: `${KUNDE(a)} · ${euro(a.gesamt)} · ${seit(tageSeit(a.angenommenAm || a.erstelltAm))} beauftragt`,
+          aktionen: [
+            { text: "Rechnung daraus schreiben", ziel: "rechnungAus", id: a.id, haupt: true },
+            { text: "Angebot ansehen", ziel: "angebot", id: a.id },
+          ],
+        }),
+      );
+
+    /* 4. Zahlungsziel läuft in den nächsten Tagen ab. */
+    rechnungen
+      .filter(
+        (r) => r.status === "offen" && istDatum(r.zahlungsziel) && r.zahlungsziel >= heute && tageBis(r.zahlungsziel) <= 3,
+      )
+      .forEach((r) =>
+        add({
+          prio: 5,
+          alter: 3 - tageBis(r.zahlungsziel),
+          art: "rechnung",
+          titel: `Rechnung ${r.nummer} wird ${tageBis(r.zahlungsziel) === 0 ? "heute" : tageBis(r.zahlungsziel) === 1 ? "morgen" : `in ${tageBis(r.zahlungsziel)} Tagen`} fällig`,
+          meta: `${KUNDE(r)} · ${euro(r.gesamt)} · zahlbar bis ${datum(r.zahlungsziel)}`,
+          aktionen: [{ text: "Rechnung öffnen", ziel: "rechnung", id: r.id }],
+        }),
+      );
+
+    /* 5. Rausgeschickte Angebote, von denen man nie wieder hört. */
+    angebote
+      .filter((a) => a.status === "versendet")
+      .forEach((a) => {
+        const laeuftAb = istDatum(a.gueltigBis) && tageBis(a.gueltigBis) <= 5;
+        const abgelaufen = istDatum(a.gueltigBis) && tageBis(a.gueltigBis) < 0;
+        const still = tageSeit(a.versendetAm || a.erstelltAm) >= 7;
+        if (!laeuftAb && !still) return;
+        add({
+          prio: abgelaufen ? 5 : 6,
+          alter: tageSeit(a.versendetAm || a.erstelltAm),
+          art: "angebot",
+          titel: abgelaufen
+            ? `Angebot ${a.nummer} ist abgelaufen`
+            : laeuftAb
+              ? `Angebot ${a.nummer} läuft bald ab`
+              : `Angebot ${a.nummer} liegt ohne Antwort`,
+          meta:
+            `${KUNDE(a)} · ${euro(a.gesamt)} · ` +
+            (istDatum(a.gueltigBis) ? `gültig bis ${datum(a.gueltigBis)} · ` : "") +
+            `${seit(tageSeit(a.versendetAm || a.erstelltAm))} raus`,
+          aktionen: [{ text: "Angebot öffnen", ziel: "angebot", id: a.id, haupt: abgelaufen }],
+        });
+      });
+
+    /* 6. Entwürfe, die nie jemand abgeschickt hat. */
+    angebote
+      .filter((a) => a.status === "entwurf" && tageSeit(a.aktualisiertAm || a.erstelltAm) >= 2)
+      .forEach((a) =>
+        add({
+          prio: 7,
+          alter: tageSeit(a.aktualisiertAm || a.erstelltAm),
+          art: "angebot",
+          titel: `Angebot ${a.nummer} liegt noch im Entwurf`,
+          meta: `${KUNDE(a)} · ${euro(a.gesamt)} · ${seit(tageSeit(a.aktualisiertAm || a.erstelltAm))} nicht angefasst`,
+          aktionen: [{ text: "Angebot öffnen", ziel: "angebot", id: a.id }],
+        }),
+      );
+
+    rechnungen
+      .filter((r) => r.status === "entwurf" && tageSeit(r.aktualisiertAm || r.erstelltAm) >= 2)
+      .forEach((r) =>
+        add({
+          prio: 7,
+          alter: tageSeit(r.aktualisiertAm || r.erstelltAm),
+          art: "rechnung",
+          titel: `Rechnung ${r.nummer} ist noch nicht gestellt`,
+          meta: `${KUNDE(r)} · ${euro(r.gesamt)} · ${seit(tageSeit(r.aktualisiertAm || r.erstelltAm))} im Entwurf`,
+          aktionen: [{ text: "Rechnung öffnen", ziel: "rechnung", id: r.id }],
+        }),
+      );
+
+    /* 7. Angefasst, aber seitdem nichts passiert. */
+    anfragen
+      .filter(
+        (a) => a.status === "in_arbeit" && tageSeit(a.eingang) >= 3 && !angebote.some((x) => x.anfrageId === a.id),
+      )
+      .forEach((a) =>
+        add({
+          prio: 8,
+          alter: tageSeit(a.eingang),
+          art: "anfrage",
+          titel: `${a.name} wartet noch auf ein Angebot`,
+          meta: [a.projekt, `${seit(tageSeit(a.eingang))} in Arbeit`].filter(Boolean).join(" · "),
+          aktionen: [
+            { text: "Angebot schreiben", ziel: "angebotAus", id: a.id, haupt: true },
+            { text: "Anfrage öffnen", ziel: "anfrage", id: a.id },
+          ],
+        }),
+      );
+
+    return auf.sort((a, b) => a.prio - b.prio || b.alter - a.alter);
+  }
+
+  const HEUTE_MAX = 6;
+
+  function zeichneHeute() {
+    const alle = heuteAufgaben();
+    const zeigen = alle.slice(0, HEUTE_MAX);
+    const rest = alle.length - zeigen.length;
+    const dringend = alle.filter((x) => x.dringend).length;
+
+    const tag = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+    const wort = ZAHLWORT[alle.length] || alle.length;
+    const kopf = alle.length
+      ? `${wort} ${alle.length === 1 ? "Sache" : "Sachen"}, dann bist du durch.`
+      : "Nichts liegt an.";
+    const unter = alle.length
+      ? [
+          dringend ? `${dringend} davon ${dringend === 1 ? "ist" : "sind"} dringend` : "",
+          `${anfragen.filter((a) => a.status === "neu").length} neue Anfragen`,
+          `${rechnungen.filter((r) => r.status === "offen").length} offene Rechnungen`,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "Alles beantwortet, alles gestellt, nichts überfällig.";
+
+    heuteEl.hidden = false;
+    heuteEl.innerHTML = `
+      <p class="admin-heute-tag"><span class="admin-heute-punkt" aria-hidden="true"></span>Heute · ${esc(tag)}</p>
+      <h2 class="admin-heute-kopf">${esc(kopf)}</h2>
+      <p class="admin-heute-unter">${esc(unter)}</p>
+      ${zeigen.length ? `<div class="admin-heute-karten">${zeigen.map(heuteKarteHtml).join("")}</div>` : ""}
+      ${rest > 0 ? `<p class="admin-heute-rest">und ${rest} ${rest === 1 ? "weitere Sache" : "weitere Sachen"} weiter unten in den Listen.</p>` : ""}`;
+  }
+
+  function heuteKarteHtml(k) {
+    const knopf = (a) =>
+      `<button type="button" class="admin-heute-knopf${a.haupt ? " is-haupt" : ""}" data-heute="${esc(a.ziel)}" data-id="${esc(a.id)}">${esc(a.text)}</button>`;
+    return `
+      <article class="admin-heute-karte${k.dringend ? " is-dringend" : ""}">
+        <span class="admin-heute-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${ICONS[k.art]}</svg>
+        </span>
+        <div class="admin-heute-text">
+          <p class="admin-heute-titel">${esc(k.titel)}</p>
+          <p class="admin-heute-meta">${esc(k.meta)}</p>
+        </div>
+        <div class="admin-heute-aktionen">${k.aktionen.map(knopf).join("")}</div>
+      </article>`;
+  }
+
+  heuteEl.addEventListener("click", (event) => {
+    const knopf = event.target.closest("[data-heute]");
+    if (!knopf) return;
+    const id = knopf.dataset.id;
+    switch (knopf.dataset.heute) {
+      case "anfrage":
+        offeneAnfrage = id;
+        filterAnfragen = "alle";
+        zeichneFilter();
+        zeichneListe();
+        springZu("anfragen");
+        break;
+      case "angebot":
+        offenesAngebot = id;
+        filterAngebote = "alle";
+        zeichneAngebotFilter();
+        zeichneAngebotListe();
+        springZu("angebote");
+        break;
+      case "rechnung":
+        offeneRechnung = id;
+        filterRechnungen = "alle";
+        zeichneRechnungFilter();
+        zeichneRechnungListe();
+        springZu("rechnungen");
+        break;
+      case "rechnungAus":
+        rechnungAusAngebot(id);
+        springZu("rechnungen");
+        break;
+      case "angebotAus":
+        angebotAusAnfrage(id);
+        springZu("angebote");
+        break;
+    }
+  });
+
+  /* Der Reiterwechsel allein reicht nicht: auf dem Handy steht die Liste weit
+     unter dem Briefing, und man sähe nach dem Klick unverändert dieselbe
+     Stelle. */
+  function springZu(reiter) {
+    zeigeReiter(reiter);
+    const ziel = el("panel" + reiter[0].toUpperCase() + reiter.slice(1));
+    const offen = ziel?.querySelector(".admin-item.is-open") || ziel;
+    offen?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function zeichneStats(z) {
     const kachel = ([titel, zahl, betrag, klasse]) => `

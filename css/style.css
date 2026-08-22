@@ -3103,6 +3103,142 @@ h1 .word:last-child {
 
 .admin-stat.is-warnung .admin-stat-wert { color: #a04a3a; }
 
+/* ---------- Heute: das Briefing über allem ----------
+   Bewusst breiter Weißraum und nur eine große Zeile. Wer das Tool öffnet,
+   soll erst lesen, was zu tun ist, und dann erst Zahlen sehen. */
+.admin-heute {
+  margin: clamp(30px, 5vw, 46px) 0 0;
+  padding: clamp(26px, 4vw, 38px) clamp(22px, 3.5vw, 34px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 88% -20%, rgba(198,154,44,.14), transparent 55%),
+    var(--surface);
+  box-shadow: var(--card-shadow);
+}
+.admin-heute-tag {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: .7rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--gold-ink);
+}
+.admin-heute-punkt {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(198,154,44,.8);
+  animation: heutePuls 2.6s ease-in-out infinite;
+}
+@keyframes heutePuls { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+.admin-heute-kopf {
+  margin: 14px 0 0;
+  /* Serif wie alle großen Zeilen der Seite: das Briefing ist eine Ansage,
+     keine Kennzahl. */
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: clamp(1.6rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+.admin-heute-unter {
+  margin: 10px 0 0;
+  font-size: .92rem;
+  color: var(--text-dim);
+}
+.admin-heute-karten { display: grid; gap: 10px; margin-top: clamp(22px, 3vw, 30px); }
+.admin-heute-karte {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: rgba(255,255,255,.5);
+  transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.admin-heute-karte:hover { border-color: var(--gold); transform: translateY(-1px); }
+.admin-heute-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 1px solid rgba(198,154,44,.4);
+  background: rgba(198,154,44,.12);
+  color: var(--gold-ink);
+}
+.admin-heute-titel {
+  margin: 0;
+  font-size: .98rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+.admin-heute-meta {
+  margin: 4px 0 0;
+  font-size: .82rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.admin-heute-aktionen { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-heute-knopf {
+  padding: 8px 15px;
+  border: 1px solid var(--border-soft);
+  border-radius: 40px;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: .82rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color .3s var(--ease), color .3s var(--ease), background .3s var(--ease);
+}
+.admin-heute-knopf:hover { border-color: var(--gold); color: var(--text); }
+.admin-heute-knopf.is-haupt {
+  border-color: var(--gold-dim);
+  background: var(--gold-dim);
+  color: #fff8e6;
+}
+.admin-heute-knopf.is-haupt:hover { background: var(--gold-ink); border-color: var(--gold-ink); color: #fff8e6; }
+
+/* Überfällig sieht anders aus als „liegt noch an“. */
+.admin-heute-karte.is-dringend {
+  border-color: rgba(160,74,58,.45);
+  background: rgba(160,74,58,.06);
+}
+.admin-heute-karte.is-dringend .admin-heute-icon {
+  border-color: rgba(160,74,58,.4);
+  background: rgba(160,74,58,.1);
+  color: #a04a3a;
+}
+.admin-heute-karte.is-dringend .admin-heute-knopf.is-haupt {
+  background: #a04a3a;
+  border-color: #a04a3a;
+  color: #fff3ee;
+}
+.admin-heute-karte.is-dringend .admin-heute-knopf.is-haupt:hover { background: #8a3b2d; border-color: #8a3b2d; }
+.admin-heute-rest {
+  margin: 16px 0 0;
+  font-size: .82rem;
+  color: var(--text-dim);
+}
+
+@media (max-width: 700px) {
+  .admin-heute-karte { grid-template-columns: auto minmax(0, 1fr); }
+  .admin-heute-aktionen { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-heute-punkt { animation: none; }
+  .admin-heute-karte:hover { transform: none; }
+}
+
 /* ---------- Fertige Rechnung als Vorschau ---------- */
 .admin-vorschau {
   margin: 20px 0;
